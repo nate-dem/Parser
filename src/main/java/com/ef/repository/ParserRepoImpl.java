@@ -4,66 +4,110 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.ef.model.ServerRequest;
 import com.ef.util.DBConnection;
 import com.ef.util.DurationType;
 import com.ef.util.ParserConstants;
 import com.mysql.jdbc.Connection;
-import com.mysql.jdbc.PreparedStatement;
+import java.sql.PreparedStatement;
 
-public class ParserRepoImpl implements ParserRepo{
-	private final Logger logger = LoggerFactory.getLogger(ParserRepo.class);
+public class ParserRepoImpl implements ParserRepo {
+
+	private final Logger logger = LoggerFactory.getLogger(ParserRepoImpl.class);
 	
-	public ParserRepoImpl() {
+	private JdbcTemplate jdbcTemplate;
+	
+	// mysql insert statement.  Avoids insertion of duplicate records based on start_date & ip_address value pairs.
+	private final static String INSERT_REQUEST_LOG_SQL = " insert ignore into ServerRequestLogs (start_date, ip_address, request_method, status, user_agent)"
+				+ " values (?, INET_ATON(?), ?, ?, ?)";
+	
+	public ParserRepoImpl(JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
 	}
 	
 	public void saveBlockedIps() {}
 
 	public void saveRequestData(Stream<String> stream) {
 		
-	// mysql insert statement.  Avoids insertion of duplicate records based on date_time & ip_address value pairs.
-	 String query = " insert ignore into request_log (date_time, ip_address, request_method, status, user_agent)"
-				+ " values (?, INET_ATON(?), ?, ?, ?)";
-
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement preparedStmt = (PreparedStatement) conn.prepareStatement(query)) {
-			 
+		//try (Connection conn = DBConnection.getConnection(); PreparedStatement preparedStmt = (PreparedStatement) conn.prepareStatement(query)) {
+		try {
 			final AtomicInteger counter = new AtomicInteger();
+			List<ServerRequest> requests = new ArrayList<>();
 			long start = System.currentTimeMillis();
 			stream.forEach(str -> {
-				String[] trimInput = str.split("\\|");
+				String[] trimInput = str.split(ParserConstants.LOG_FILE_DELIMITER);
 				
 				try {
 					Date parsedDate = new SimpleDateFormat(ParserConstants.LOG_DATE_FORMAT).parse(trimInput[0]);
-					preparedStmt.setObject(1, new java.sql.Timestamp(parsedDate.getTime()));
-					preparedStmt.setString(2, trimInput[1]);
-					preparedStmt.setString(3, trimInput[2]);
-					preparedStmt.setString(4, trimInput[3]);
-					preparedStmt.setString(5, trimInput[4]);
-
-					preparedStmt.addBatch();
+					//preparedStmt.setObject(1, new java.sql.Timestamp(parsedDate.getTime()));
+					//preparedStmt.setString(2, trimInput[1]);
+					//preparedStmt.setString(3, trimInput[2]);
+					//preparedStmt.setString(4, trimInput[3]);
+					//preparedStmt.setString(5, trimInput[4]);
+					ServerRequest serverRequest = new ServerRequest();
+					serverRequest.setDate(parsedDate);
+					serverRequest.setIp(trimInput[1]);
+					serverRequest.setRequestMethod(trimInput[2]);
+					serverRequest.setStatus(trimInput[3]);
+					serverRequest.setUserAgent(trimInput[4]);
+					requests.add(serverRequest);
+					//preparedStmt.addBatch();
 					
 					logger.info("processed " + counter.incrementAndGet());
 					
-					if(counter.get() % 10000 == 0)
-						preparedStmt.executeBatch();
-					
-				} catch (ParseException | SQLException e) {
+					//if(counter.get() % 10000 == 0)
+						//preparedStmt.executeBatch();
+					if(requests.size() % 10000 == 0) {
+						executeInsertBatch(requests);
+						requests.clear();
+					}
+						
+				} catch (ParseException e) {
 					logger.error(e.getMessage());
 				}
 			});
-			preparedStmt.executeBatch();
+			//preparedStmt.executeBatch();
 			logger.info(ParserConstants.DB_IMPORT_COMPLETED);
 			logger.info("Time Taken = "+(System.currentTimeMillis()-start)+"ms");
-		} catch (NullPointerException | SQLException e1) {
+		} catch (NullPointerException e1) {
 			logger.error(e1.getMessage());
+			throw e1;
 		}
 
+	}
+	
+	//insert batch example
+	private void executeInsertBatch(final List<ServerRequest> requests){
+				
+	 jdbcTemplate.batchUpdate(INSERT_REQUEST_LOG_SQL, new BatchPreparedStatementSetter() {
+
+		@Override
+		public void setValues(PreparedStatement ps, int i) throws SQLException {
+			ServerRequest request = requests.get(i);
+			ps.setObject(1, new java.sql.Timestamp(request.getDate().getTime()));
+			ps.setString(2, request.getIp());
+			ps.setString(3, request.getRequestMethod() );
+			ps.setString(4, request.getStatus() );
+			ps.setString(5, request.getUserAgent() );
+		}
+				
+		@Override
+		public int getBatchSize() {
+			return requests.size();
+		}
+
+	  });
 	}
 
 	public boolean filterRequestData(Date parsedStartDate, Date parsedEndDate, DurationType duration, int threshold) {

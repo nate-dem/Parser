@@ -69,7 +69,7 @@ public class CommandLineArgsParser {
 			}
 			
 			// mock args for testing
-			accesslogInp = "C:/Work/Rel2_Rel3_merge/rel2/Parser/resources/access.log";
+			accesslogInp = "C:/ef/access.log";
 			thresholdInp = "250";
 			durationInp = "daily";
 			startDateInp = "2017-01-01.13:00:00";

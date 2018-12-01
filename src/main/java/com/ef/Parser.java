@@ -37,5 +37,6 @@ public class Parser {
 		CommandLineArgs commandLineArgs = cmdParser.parseArguments(args);
 		
 		parserController.filterLogFile(commandLineArgs);
+		parserController.saveLog(commandLineArgs.getAccesslog());
 	}
 }
