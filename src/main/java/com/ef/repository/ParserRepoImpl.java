@@ -1,39 +1,36 @@
 package com.ef.repository;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.ef.util.DBConnection;
-import com.ef.util.Helper;
-import com.ef.util.Property;
+import com.ef.util.DurationType;
+import com.ef.util.ParserConstants;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 
 public class ParserRepoImpl implements ParserRepo{
-	private Helper helper;
-	private final Logger logger = Logger.getLogger(ParserRepo.class);
+	private final Logger logger = LoggerFactory.getLogger(ParserRepo.class);
 	
 	public ParserRepoImpl() {
-		helper = new Helper();
 	}
+	
+	public void saveBlockedIps() {}
 
 	public void saveRequestData(Stream<String> stream) {
-
-		// mysql insert statement.  Avoids insertion of duplicate records based on date_time & ip_address value pairs.
-		String query = " insert ignore into request_log (date_time, ip_address, request_method, status, user_agent)"
-				+ " values (?, INET_ATON(?), ?, ?, ?)";
 		
+	// mysql insert statement.  Avoids insertion of duplicate records based on date_time & ip_address value pairs.
+	 String query = " insert ignore into request_log (date_time, ip_address, request_method, status, user_agent)"
+				+ " values (?, INET_ATON(?), ?, ?, ?)";
+
 		try (Connection conn = DBConnection.getConnection(); PreparedStatement preparedStmt = (PreparedStatement) conn.prepareStatement(query)) {
 			 
 			final AtomicInteger counter = new AtomicInteger();
@@ -42,7 +39,7 @@ public class ParserRepoImpl implements ParserRepo{
 				String[] trimInput = str.split("\\|");
 				
 				try {
-					Date parsedDate = helper.getDateFormat().parse(trimInput[0]);
+					Date parsedDate = new SimpleDateFormat(ParserConstants.LOG_DATE_FORMAT).parse(trimInput[0]);
 					preparedStmt.setObject(1, new java.sql.Timestamp(parsedDate.getTime()));
 					preparedStmt.setString(2, trimInput[1]);
 					preparedStmt.setString(3, trimInput[2]);
@@ -61,7 +58,7 @@ public class ParserRepoImpl implements ParserRepo{
 				}
 			});
 			preparedStmt.executeBatch();
-			logger.info(Property.DB_IMPORT_COMPLETED);
+			logger.info(ParserConstants.DB_IMPORT_COMPLETED);
 			logger.info("Time Taken = "+(System.currentTimeMillis()-start)+"ms");
 		} catch (NullPointerException | SQLException e1) {
 			logger.error(e1.getMessage());
@@ -69,7 +66,7 @@ public class ParserRepoImpl implements ParserRepo{
 
 	}
 
-	public boolean filterRequestData(Date parsedStartDate, Date parsedEndDate, String duration, int threshold) {
+	public boolean filterRequestData(Date parsedStartDate, Date parsedEndDate, DurationType duration, int threshold) {
 
 		String selectSQL = "SELECT id, INET_NTOA(ip_address), date_time, COUNT(ip_address) FROM request_log WHERE date_time >= ? AND date_time <= ? GROUP BY ip_address HAVING COUNT(ip_address) >= ?  ";
 		
@@ -79,12 +76,12 @@ public class ParserRepoImpl implements ParserRepo{
 			preparedStmt.setObject(2, parsedEndDate);
 			preparedStmt.setInt(3, threshold);
 
-			logger.info(Property.PROCESSING_QUERY);
+			logger.info(ParserConstants.PROCESSING_QUERY);
 			// execute select SQL statement
 			ResultSet rs = preparedStmt.executeQuery();
 
 			if (!rs.isBeforeFirst()) {
-				logger.info(Property.NO_RESULT_FOUND);
+				logger.info(ParserConstants.NO_RESULT_FOUND);
 				return false;
 			}
 			
@@ -104,7 +101,7 @@ public class ParserRepoImpl implements ParserRepo{
 				
 				preparedInsertStmt.setObject(1, parsedStartDate);
 				preparedInsertStmt.setString(2, ipAddress);
-				preparedInsertStmt.setString(3, duration.toUpperCase());
+				preparedInsertStmt.setString(3, duration.name());
 				preparedInsertStmt.setInt(4, numRequest);
 				String remark = "Request Exceed " + threshold + " from " + parsedStartDate + " to " + parsedEndDate;
 				preparedInsertStmt.setString(5, remark);
@@ -125,58 +122,6 @@ public class ParserRepoImpl implements ParserRepo{
 
 	}
 	
-	public boolean filterAccessLogFile(String pathToFile, Date parsedStartDate, Date parsedEndDate, int threshold) {
-		
-		if (!new File(pathToFile).exists()){
-			logger.error(Property.INVALID_FILE);
-			return false;
-		}
-		
-		logger.info(Property.PROCESSING_QUERY);
-		
-		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
-
-			Map<String, Long> counting = 
-				stream.filter(t -> {
-					String[] trimInput = t.split("\\|");
-					try {
-						Date parsedDate = helper.getDateFormat().parse(trimInput[0]);
-						if (parsedDate.compareTo(parsedStartDate) >= 0 && parsedDate.compareTo(parsedEndDate) <= 0) {
-							return true;
-						}
-					} catch (ParseException e) {
-						logger.error(e.getMessage());
-					}
-					return false;
-				})
-			  .map(str -> str.split("\\|"))
-			  .map(str -> str[1])
-			  .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-	
-			boolean hasResult = false;
-			
-			for(Entry<String, Long> k : counting.entrySet()) {
-				if (k.getValue() >= threshold) {
-					logger.info(k.getKey());
-					hasResult = true;
-				}
-			}
-			
-			if (hasResult) {
-				return true;
-			}
-			else {
-				logger.info(Property.NO_RESULT_FOUND);
-				return false;
-			}
-
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-		}
-		
-		return false;
-	}
-
 	public boolean filterByIP(String ipAddress) {
 
 		String selectSQL = "SELECT id, INET_NTOA(ip_address), date_time FROM request_log WHERE ip_address = INET_ATON(?) ";
@@ -185,10 +130,10 @@ public class ParserRepoImpl implements ParserRepo{
 			preparedStmt.setObject(1, ipAddress);
 			// execute select SQL statement
 			ResultSet rs = preparedStmt.executeQuery();
-			logger.info(Property.PROCESSING_QUERY);
+			logger.info(ParserConstants.PROCESSING_QUERY);
 			
 			if (!rs.isBeforeFirst()) {
-				logger.info(Property.NO_RESULT_FOUND);
+				logger.info(ParserConstants.NO_RESULT_FOUND);
 				return false;
 			}
 			while (rs.next()) {
@@ -202,4 +147,5 @@ public class ParserRepoImpl implements ParserRepo{
 		
 		return true;
 	}
+
 }
