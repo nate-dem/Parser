@@ -28,5 +28,11 @@ public class CommandLineArgs {
 	public String getAccesslog() {
 		return accesslog;
 	}
+
+	@Override
+	public String toString() {
+		return "CommandLineArgs [startDate=" + startDate + ", duration=" + duration + ", threshold=" + threshold
+				+ ", accesslog=" + accesslog + "]";
+	}
 	
 }

@@ -1,4 +1,4 @@
-package com.nate.weblogparser;
+package com.ef;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -7,7 +7,7 @@ import junit.framework.TestSuite;
 /**
  * Unit test for simple App.
  */
-public class ParserApplicationTest 
+public class ParserTest 
     extends TestCase
 {
     /**
@@ -15,7 +15,7 @@ public class ParserApplicationTest
      *
      * @param testName name of the test case
      */
-    public ParserApplicationTest( String testName )
+    public ParserTest( String testName )
     {
         super( testName );
     }
@@ -25,7 +25,7 @@ public class ParserApplicationTest
      */
     public static Test suite()
     {
-        return new TestSuite( ParserApplicationTest.class );
+        return new TestSuite( ParserTest.class );
     }
 
     /**
