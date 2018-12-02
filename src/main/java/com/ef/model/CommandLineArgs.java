@@ -2,8 +2,6 @@ package com.ef.model;
 
 import java.util.Date;
 
-import com.ef.util.DurationType;
-
 public class CommandLineArgs {
 	private Date startDate;
 	private DurationType duration;

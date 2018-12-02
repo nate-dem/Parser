@@ -1,7 +1,6 @@
-
 CREATE DATABASE IF NOT EXISTS `Parser`;
 
-CREATE TABLE `Parser`.`ServerRequestLogs` (
+CREATE TABLE `Parser`.`LogEntries` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `start_date` timestamp(3) NOT NULL,
   `ip_address` INT UNSIGNED NOT NULL,
@@ -17,11 +16,12 @@ CREATE TABLE `Parser`.`ServerRequestLogs` (
 CREATE TABLE `Parser`.`BlockedIps` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `ip_address` INT UNSIGNED NOT NULL,
+  `num_request` SMALLINT UNSIGNED NOT NULL,
   `reason` VARCHAR(255) NOT NULL,
    UNIQUE (`ip_address`),
    PRIMARY KEY (`id`),
    UNIQUE INDEX `id_UNIQUE` (`id` ASC),
-   CONSTRAINT `fk_ip_address` FOREIGN KEY (`ip_address`) REFERENCES `Parser`.`ServerRequestLogs`(`ip_address`)
+   CONSTRAINT `fk_ip_address` FOREIGN KEY (`ip_address`) REFERENCES `Parser`.`LogEntries`(`ip_address`)
 );
 
 /*

@@ -1,4 +1,4 @@
-package com.ef.util;
+package com.ef.model;
 
 public enum DurationType {
     HOURLY("hourly"),

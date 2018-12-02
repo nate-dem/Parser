@@ -2,19 +2,20 @@ package com.ef.repository;
 
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Stream;
 
+import com.ef.exception.InvalidLogFileException;
+import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
-import com.ef.model.IPRequest;
+import com.ef.observer.Observable;
 
-public interface ParserRepo {
+public interface ParserRepo extends Observable {
 	
-	public void saveLogs(Stream<String> stream);
+	public void saveLog(String pathToFile)  throws InvalidLogFileException ;
 	
-	public List<IPRequest> findIps(CommandLineArgs commandLineArgs, Date endDate);
+	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs, Date endDate);
 
-	public boolean filterByIP(String ipAddress);
+	public boolean findByIP(String ipAddress);
 	
-	public boolean saveBlockedIps(List<IPRequest> ipRequests);
+	public int[] saveBlockedIPs(List<BlockedIP> blockedIPs);
 	
 }

@@ -1,4 +1,4 @@
-package com.ef.controller;
+package com.ef.util;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -11,8 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ef.model.CommandLineArgs;
-import com.ef.util.DurationType;
-import com.ef.util.ParserConstants;
+import com.ef.model.DurationType;
 
 public class CommandLineArgsParser {
 	
@@ -33,47 +32,35 @@ public class CommandLineArgsParser {
 		String thresholdInp = null;
 		String accesslogInp = null;
 		CommandLineArgs commandLineArgs = null;
+		boolean validCmdLineInput = false;
 		
 		try {
 			CommandLine cmd = parser.parse(options, args);
 
-			/*
-			 * CLI args: accesslog, startDate, duration, threshold
-			 */
-			if (cmd.getOptionValue("a") != null && cmd.getOptionValue("s") != null && cmd.getOptionValue("d") != null && cmd.getOptionValue("t") != null) {
-				
-				// reformat accesslog arg (/path/to/file) to (\path\to\file)
-				String[] pathToFileArr = cmd.getOptionValue("a").split("\\/");
-				StringBuilder stringBuilder = new StringBuilder();
-				for (String p : pathToFileArr) {
-					stringBuilder.append(p).append("\\");
-				}
-				accesslogInp = stringBuilder.toString();
-				startDateInp = cmd.getOptionValue("s");
-				durationInp = cmd.getOptionValue("d");
-				thresholdInp = cmd.getOptionValue("t");
-
-				//parserController.filterLogFile(pathToFile, commandLineArg1);
-			}
-			/*
-			 * CLI Args: startDate, duration, threshold
-			 */
-			else if (cmd.getOptionValue("s") != null && cmd.getOptionValue("d") != null && cmd.getOptionValue("t") != null) {
-				startDateInp = cmd.getOptionValue("s");
-				durationInp = cmd.getOptionValue("d");
-				thresholdInp = cmd.getOptionValue("t");
-				
-				//parserService.filterRequestData("", startDate, duration, threshold);
-			} else {
-				//throw new IllegalArgumentException("Unsupported Command Line args");
+			// Parse arg: accesslog
+			if (cmd.getOptionValue("a") != null ) {
+				accesslogInp = cmd.getOptionValue("a");
 			}
 			
+			 // Parse args: startDate, duration, threshold
+			if (cmd.getOptionValue("s") != null && cmd.getOptionValue("d") != null && cmd.getOptionValue("t") != null) {
+				startDateInp = cmd.getOptionValue("s");
+				durationInp = cmd.getOptionValue("d");
+				thresholdInp = cmd.getOptionValue("t");
+				validCmdLineInput = true;
+			}
+			
+			/*
 			// mock args for testing
-			accesslogInp = "C:/ef/access.log";
-			thresholdInp = "250";
+			ClassLoader classLoader = getClass().getClassLoader();
+			File file = new File(classLoader.getResource("access.log").getFile());
+			
+			accesslogInp = file.getAbsolutePath(); // "C:/ef/access.log";
+			thresholdInp = "500";
 			durationInp = "daily";
-			startDateInp = "2017-01-01.13:00:00";
+			startDateInp = "2017-01-01.00:00:00";
 			// end of mock
+			*/
 			
 			int threshold = Integer.parseInt(thresholdInp);
 			Date startDate= new SimpleDateFormat(ParserConstants.START_DATE_FORMAT).parse(startDateInp);

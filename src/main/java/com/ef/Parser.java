@@ -1,47 +1,32 @@
 package com.ef;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.ef.config.AppConfig;
-import com.ef.controller.CommandLineArgsParser;
 import com.ef.controller.ParserController;
 import com.ef.model.CommandLineArgs;
+import com.ef.util.CommandLineArgsParser;
 
 /*
  * Java parser that parses web server access log file and save to MySQL db.
  *
  * @author Natnael Demisse
- * @version 1.1
+ * @version 1.0
  * @since 2017-12-29
  */
 public class Parser {
 
-	private static final Logger LOGGER =  LoggerFactory.getLogger(Parser.class);
-	
 	public static void main(String[] args) {
 		
-	      ApplicationContext ctx = 
-	    	         new AnnotationConfigApplicationContext(AppConfig.class);
+	    ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
 
-		// instantiate parser service and repo layers
-		//WebLogParserRepo parserRepo = ctx.getBean(WebLogParserRepo.class);
-		//WebLogParserService parserService = ctx.getBean(WebLogParserService.class);
-	    CommandLineArgsParser cmdParser = ctx.getBean(CommandLineArgsParser.class);
+	    CommandLineArgsParser cmdLineArgsParser = ctx.getBean(CommandLineArgsParser.class);
 	    ParserController parserController = ctx.getBean(ParserController.class);
 	    
-		String ip = "192.168.102.136";
-		CommandLineArgs commandLineArgs = cmdParser.parseArguments(args);
+		CommandLineArgs commandLineArgs = cmdLineArgsParser.parseArguments(args);
 		
-		// save to database
-		//parserController.saveLog(commandLineArgs.getAccesslog());
-		
-		// find Ips which made request more than given threshold and save to db
-		parserController.saveBlockedIps(commandLineArgs);
-		
-		//parserController.filterLogFile(commandLineArgs);
+		parserController.processArgs(commandLineArgs);
 		
 		((AnnotationConfigApplicationContext)ctx).close();
 	}

@@ -2,23 +2,20 @@ package com.ef.service;
 
 import java.util.List;
 
-import com.ef.exception.InvalidWebLogFileException;
-import com.ef.exception.WebLogFileNotFoundException;
+import com.ef.exception.InvalidLogFileException;
+import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
-import com.ef.model.IPRequest;
 
 public interface ParserService {
 	
-	public void saveLogs(String pathToFile) throws InvalidWebLogFileException;
-
-	public boolean filterFile(CommandLineArgs commandLineArg) throws WebLogFileNotFoundException;
+	public void saveLog(String pathToFile) throws InvalidLogFileException;
 
 	public boolean findByIP(String ipAddress);
 	
-	public List<IPRequest> findIps(CommandLineArgs commandLineArgs);
+	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs);
 	
-	public void notifyObservers();
+	//public List<BlockedIP> prepareBlockedIPsForSave(CommandLineArgs commandLineArgs, List<IPRequest> ipRequests);
 	
-	public boolean saveBlockedIps(List<IPRequest> iPRequests);
+	public boolean saveBlockedIPs(List<BlockedIP> blockedIPs);
 	
 }

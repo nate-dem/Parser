@@ -1,7 +1,6 @@
 package com.ef.util;
 
 public class ParserConstants {
-	public static final String LOG_FILE_URL = "C:\\Users\\Nate\\Desktop\\Java_MySQL_Test\\access.log";
 	public static final  String NO_RESULT_FOUND = "No Result Found";
 	public static final  String INVALID_DURATION = "Invalid Duration";
 	public static final String INVALID_IP =  "Invalid IP address";

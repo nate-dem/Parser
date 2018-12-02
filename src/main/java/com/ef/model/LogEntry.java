@@ -2,20 +2,21 @@ package com.ef.model;
 
 import java.util.Date;
 
-public class ServerRequest {
+public class LogEntry {
+	
 	private Date date;
-	private String ip;
+	private String IP;
 	private String requestMethod;
 	private String status;
 	private String userAgent;
 	
-	public ServerRequest() {
+	public LogEntry() {
 	}
 
-	public ServerRequest(Date date, String ip, String requestMethod, String status, String userAgent) {
+	public LogEntry(Date date, String IP, String requestMethod, String status, String userAgent) {
 		super();
 		this.date = date;
-		this.ip = ip;
+		this.IP = IP;
 		this.requestMethod = requestMethod;
 		this.status = status;
 		this.userAgent = userAgent;
@@ -24,8 +25,8 @@ public class ServerRequest {
 	public Date getDate() {
 		return date;
 	}
-	public String getIp() {
-		return ip;
+	public String getIP() {
+		return IP;
 	}
 	public String getRequestMethod() {
 		return requestMethod;
@@ -41,8 +42,8 @@ public class ServerRequest {
 		this.date = date;
 	}
 
-	public void setIp(String ip) {
-		this.ip = ip;
+	public void setIP(String IP) {
+		this.IP = IP;
 	}
 
 	public void setRequestMethod(String requestMethod) {
@@ -59,7 +60,7 @@ public class ServerRequest {
 
 	@Override
 	public String toString() {
-		return "ServerRequest [date=" + date + ", ip=" + ip + ", requestDetail=" + requestMethod 
+		return "ServerRequest [date=" + date + ", IP=" + IP + ", requestDetail=" + requestMethod 
 				+ ", userAgent=" + userAgent + "]";
 	}
 	
