@@ -1,10 +1,13 @@
 package com.ef.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ef.exception.InvalidWebLogFileException;
 import com.ef.model.CommandLineArgs;
+import com.ef.model.IPRequest;
 import com.ef.service.ParserService;
 
 public class ParserController {
@@ -20,11 +23,14 @@ public class ParserController {
 	/*
 	 * filter log record from db. Search results are also saved to another table.
 	 */
-	public void retrieveLogs(CommandLineArgs commandLineArgs){
+	public void saveBlockedIps(CommandLineArgs commandLineArgs){
 
 		//logParserService.filterRequestData("", "2017-01-01.13:00:00", "daily", "250");
 		//logParserService.filterRequestData("", "2017-01-01.00:00:00", "daily", "500");
-		logParserService.retrieveLogs(commandLineArgs);
+		List<IPRequest> ipRequests = logParserService.findIps(commandLineArgs);
+		if(!ipRequests.isEmpty()) {
+			logParserService.saveBlockedIps(ipRequests);
+		}
 	}
 	
 	/*
@@ -44,7 +50,7 @@ public class ParserController {
 	 * filter request by IP
 	 */
 	public void findByIp(String ip){
-		logParserService.filterByIP(ip);
+		logParserService.findByIP(ip);
 	}
 	
 	/*

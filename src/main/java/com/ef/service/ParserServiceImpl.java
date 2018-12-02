@@ -3,7 +3,6 @@ package com.ef.service;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.ef.exception.InvalidWebLogFileException;
 import com.ef.exception.WebLogFileNotFoundException;
 import com.ef.model.CommandLineArgs;
-import com.ef.model.ServerRequest;
+import com.ef.model.IPRequest;
 import com.ef.observer.ConsoleLogger;
 import com.ef.observer.Observer;
 import com.ef.repository.ParserRepo;
@@ -42,35 +41,6 @@ public class ParserServiceImpl implements ParserService {
 	}
 	
 	/*
-	@Override
-	public List<ServerRequest> parseWebServerAccessLogFile(String pathToFile){
-		
-		List<ServerRequest> serverRequests = new ArrayList<>();
-		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
-
-			stream.forEach(str -> {
-				String[] trimInput = str.split("\\|");
-				
-				try {
-					Date parsedDate = new SimpleDateFormat(WebLogParserConstants.LOG_DATE_FORMAT).parse(trimInput[0]);
-					// log format: Date, IP, Request, Status, User Agent
-					ServerRequest req = new ServerRequest(parsedDate, trimInput[1], trimInput[2], trimInput[3], trimInput[4]);
-					//serverRequests.add(req);
-					System.out.println(req);
-				} catch (ParseException e) {
-					logger.error(e.getMessage());
-				}
-			});
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return serverRequests;
-		
-	}*/
-	
-	/*
 	 * Filter requests either from log file or db.
 	 * @param pathToFile - path to log file. Can be empty if filtering from db.
 	 */	
@@ -82,7 +52,7 @@ public class ParserServiceImpl implements ParserService {
 		//}
 		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
 
-			parserRepo.saveRequestData(stream);
+			parserRepo.saveLogs(stream);
 
 		} catch (Exception e) {
 			throw new InvalidWebLogFileException(e.getMessage());
@@ -91,40 +61,25 @@ public class ParserServiceImpl implements ParserService {
 	}
 	
 	/*
-	 * Retrieves log from db.
+	 * Retrieves log from database based on filter params
 	 * @param startDate is of "yyyy-MM-dd.HH:mm:ss" format
 	 * @param duration can take only "hourly", "daily" 
 	 * @param threshold can be an integer.
 	 */
 	
 	@Override
-	public boolean retrieveLogs(CommandLineArgs commandLineArgs) {
+	public List<IPRequest> findIps(CommandLineArgs commandLineArgs) {
 
 		try {
-			Calendar calendar = Calendar.getInstance();
-			//Date parsedStartDate = new SimpleDateFormat(WebLogParserConstants.START_DATE_FORMAT).parse(startDate);
-			calendar.setTime(commandLineArgs.getStartDate());
-			//int threshold = Integer.parseInt(thresholdInp);
-
-			if (commandLineArgs.getDuration() == DurationType.HOURLY) {
-				calendar.set(Calendar.MINUTE, Calendar.MINUTE + 60);
-			} else if (commandLineArgs.getDuration() == DurationType.DAILY) {
-				calendar.set(Calendar.HOUR_OF_DAY, Calendar.HOUR_OF_DAY + 24);
-			} else {
-				LOGGER.error(ParserConstants.INVALID_DURATION);
-				return false;
-			}
 			
-			Date parsedEndDate = calendar.getTime();
+			Date endDate = calculatedEndDate(commandLineArgs.getStartDate(), commandLineArgs.getDuration());
 			
-			return parserRepo.filterRequestData(commandLineArgs.getStartDate(), parsedEndDate, commandLineArgs.getDuration(), commandLineArgs.getThreshold());
+			return parserRepo.findIps(commandLineArgs, endDate);
 
 		} catch (NumberFormatException e) {
-			//logger.error(e.getMessage());
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
+			throw e;
 		}
-
-		return false;
 
 	}
 
@@ -199,7 +154,7 @@ public class ParserServiceImpl implements ParserService {
 	 * @param ipAddress
 	 */
 	@Override
-	public boolean filterByIP(String ipAddress) {
+	public boolean findByIP(String ipAddress) {
 
 		InetAddressValidator inetValidator = InetAddressValidator.getInstance();
 
@@ -294,5 +249,40 @@ public class ParserServiceImpl implements ParserService {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public boolean saveBlockedIps(List<IPRequest> ipRequests) {
+		
+		return parserRepo.saveBlockedIps(ipRequests);
+	}
+	
+	/*
+	@Override
+	public List<ServerRequest> parseWebServerAccessLogFile(String pathToFile){
+		
+		List<ServerRequest> serverRequests = new ArrayList<>();
+		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
+
+			stream.forEach(str -> {
+				String[] trimInput = str.split("\\|");
+				
+				try {
+					Date parsedDate = new SimpleDateFormat(WebLogParserConstants.LOG_DATE_FORMAT).parse(trimInput[0]);
+					// log format: Date, IP, Request, Status, User Agent
+					ServerRequest req = new ServerRequest(parsedDate, trimInput[1], trimInput[2], trimInput[3], trimInput[4]);
+					//serverRequests.add(req);
+					System.out.println(req);
+				} catch (ParseException e) {
+					logger.error(e.getMessage());
+				}
+			});
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return serverRequests;
+		
+	}*/
 
 }

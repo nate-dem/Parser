@@ -8,7 +8,6 @@ import org.apache.commons.cli.Options;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.ef.controller.CommandLineArgsParser;
 import com.ef.controller.ParserController;
@@ -16,6 +15,8 @@ import com.ef.repository.ParserRepo;
 import com.ef.repository.ParserRepoImpl;
 import com.ef.service.ParserService;
 import com.ef.service.ParserServiceImpl;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 public class AppConfig {
@@ -56,12 +57,12 @@ public class AppConfig {
 
 	@Bean
 	public DataSource dataSource() {
-		DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		//DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		// MySQL database we are using
-		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-		dataSource.setUrl("jdbc:mysql://localhost:3306/parser?rewriteBatchedStatements=true");
-		dataSource.setUsername("root");
-		dataSource.setPassword("root");
+		//dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+		//dataSource.setUrl("jdbc:mysql://localhost:3306/parser?useSSL=false&rewriteBatchedStatements=true");
+		//dataSource.setUsername("root");
+		//dataSource.setPassword("root");
 
 		// H2 database
 		/*
@@ -69,7 +70,19 @@ public class AppConfig {
 		 * dataSource.setUrl("jdbc:h2:tcp://localhost/~/test");
 		 * dataSource.setUsername("sa"); dataSource.setPassword("");
 		 */
-		return dataSource;
+		
+	    HikariConfig config = new HikariConfig();
+	    HikariDataSource ds;
+    	config.setDriverClassName("com.mysql.jdbc.Driver");
+        config.setJdbcUrl( "jdbc:mysql://localhost:3306/parser?useSSL=false&rewriteBatchedStatements=true" );
+        config.setUsername( "root" );
+        config.setPassword( "root" );
+        config.addDataSourceProperty( "cachePrepStmts" , "true" );
+        config.addDataSourceProperty( "prepStmtCacheSize" , "250" );
+        config.addDataSourceProperty( "prepStmtCacheSqlLimit" , "2048" );
+        ds = new HikariDataSource( config );
+	    
+		return ds;
 	}
 
 	@Bean

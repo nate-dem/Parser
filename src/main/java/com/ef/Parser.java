@@ -14,13 +14,12 @@ import com.ef.model.CommandLineArgs;
  * Java parser that parses web server access log file and save to MySQL db.
  *
  * @author Natnael Demisse
- * @version 2.0
+ * @version 1.1
  * @since 2017-12-29
  */
 public class Parser {
 
 	private static final Logger LOGGER =  LoggerFactory.getLogger(Parser.class);
-
 	
 	public static void main(String[] args) {
 		
@@ -36,7 +35,14 @@ public class Parser {
 		String ip = "192.168.102.136";
 		CommandLineArgs commandLineArgs = cmdParser.parseArguments(args);
 		
-		parserController.filterLogFile(commandLineArgs);
-		parserController.saveLog(commandLineArgs.getAccesslog());
+		// save to database
+		//parserController.saveLog(commandLineArgs.getAccesslog());
+		
+		// find Ips which made request more than given threshold and save to db
+		parserController.saveBlockedIps(commandLineArgs);
+		
+		//parserController.filterLogFile(commandLineArgs);
+		
+		((AnnotationConfigApplicationContext)ctx).close();
 	}
 }

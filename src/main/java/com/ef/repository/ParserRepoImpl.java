@@ -1,25 +1,28 @@
 package com.ef.repository;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.ef.model.BlockedIp;
+import com.ef.model.CommandLineArgs;
+import com.ef.model.IPRequest;
 import com.ef.model.ServerRequest;
-import com.ef.util.DBConnection;
 import com.ef.util.DurationType;
 import com.ef.util.ParserConstants;
-import com.mysql.jdbc.Connection;
+
 import java.sql.PreparedStatement;
 
 public class ParserRepoImpl implements ParserRepo {
@@ -29,18 +32,23 @@ public class ParserRepoImpl implements ParserRepo {
 	private JdbcTemplate jdbcTemplate;
 	
 	// mysql insert statement.  Avoids insertion of duplicate records based on start_date & ip_address value pairs.
-	private final static String INSERT_REQUEST_LOG_SQL = " insert ignore into ServerRequestLogs (start_date, ip_address, request_method, status, user_agent)"
-				+ " values (?, INET_ATON(?), ?, ?, ?)";
+	private static final String INSERT_REQUEST_LOG_SQL = "insert ignore into ServerRequestLogs "
+			+ "(start_date, ip_address, request_method, status, user_agent) "
+			+ "values (?, INET_ATON(?), ?, ?, ?)";
 	
+	private static final String SELECT_IP_BY_CRITERIA_SQL = "SELECT id, INET_NTOA(ip_address), COUNT(ip_address) "
+			+ "FROM ServerRequestLogs "
+			+ "WHERE start_date >= ? AND start_date <= ? GROUP BY ip_address HAVING COUNT(ip_address) >= ?  ";
+	
+	private static final String INSERT_BLOCKED_IP_SQL = "insert ignore into BlockedIps (ip_address, reason)"
+			+ " values (INET_ATON(?), ?)"; 
+
 	public ParserRepoImpl(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
 	
-	public void saveBlockedIps() {}
-
-	public void saveRequestData(Stream<String> stream) {
+	public void saveLogs(Stream<String> stream) {
 		
-		//try (Connection conn = DBConnection.getConnection(); PreparedStatement preparedStmt = (PreparedStatement) conn.prepareStatement(query)) {
 		try {
 			final AtomicInteger counter = new AtomicInteger();
 			List<ServerRequest> requests = new ArrayList<>();
@@ -50,11 +58,7 @@ public class ParserRepoImpl implements ParserRepo {
 				
 				try {
 					Date parsedDate = new SimpleDateFormat(ParserConstants.LOG_DATE_FORMAT).parse(trimInput[0]);
-					//preparedStmt.setObject(1, new java.sql.Timestamp(parsedDate.getTime()));
-					//preparedStmt.setString(2, trimInput[1]);
-					//preparedStmt.setString(3, trimInput[2]);
-					//preparedStmt.setString(4, trimInput[3]);
-					//preparedStmt.setString(5, trimInput[4]);
+
 					ServerRequest serverRequest = new ServerRequest();
 					serverRequest.setDate(parsedDate);
 					serverRequest.setIp(trimInput[1]);
@@ -62,24 +66,31 @@ public class ParserRepoImpl implements ParserRepo {
 					serverRequest.setStatus(trimInput[3]);
 					serverRequest.setUserAgent(trimInput[4]);
 					requests.add(serverRequest);
-					//preparedStmt.addBatch();
 					
 					logger.info("processed " + counter.incrementAndGet());
 					
-					//if(counter.get() % 10000 == 0)
-						//preparedStmt.executeBatch();
-					if(requests.size() % 10000 == 0) {
-						executeInsertBatch(requests);
-						requests.clear();
+					if(requests.size() % 25000 == 0) {
+							executeInsertBatch(requests);
+							requests.clear();
 					}
+					
+					/*
+					jdbcTemplate.update(INSERT_REQUEST_LOG_SQL, new Object[] { 
+							new java.sql.Timestamp(serverRequest.getDate().getTime()),
+							serverRequest.getIp(),
+							serverRequest.getRequestMethod(),
+							serverRequest.getStatus(),
+							serverRequest.getUserAgent(),
+						});*/
 						
 				} catch (ParseException e) {
 					logger.error(e.getMessage());
 				}
 			});
-			//preparedStmt.executeBatch();
+			executeInsertBatch(requests);
+			requests.clear();
 			logger.info(ParserConstants.DB_IMPORT_COMPLETED);
-			logger.info("Time Taken = "+(System.currentTimeMillis()-start)+"ms");
+			logger.info("Time Taken = {} ms" , (System.currentTimeMillis()-start));
 		} catch (NullPointerException e1) {
 			logger.error(e1.getMessage());
 			throw e1;
@@ -87,29 +98,94 @@ public class ParserRepoImpl implements ParserRepo {
 
 	}
 	
-	//insert batch example
-	private void executeInsertBatch(final List<ServerRequest> requests){
-				
-	 jdbcTemplate.batchUpdate(INSERT_REQUEST_LOG_SQL, new BatchPreparedStatementSetter() {
+	@Override
+	public List<IPRequest> findIps(CommandLineArgs commandLineArgs, Date endDate) {
+		
+		List<IPRequest> iPRequests = new ArrayList<>();
 
-		@Override
-		public void setValues(PreparedStatement ps, int i) throws SQLException {
-			ServerRequest request = requests.get(i);
-			ps.setObject(1, new java.sql.Timestamp(request.getDate().getTime()));
-			ps.setString(2, request.getIp());
-			ps.setString(3, request.getRequestMethod() );
-			ps.setString(4, request.getStatus() );
-			ps.setString(5, request.getUserAgent() );
+		try {
+			
+			logger.info(ParserConstants.PROCESSING_QUERY);
+			
+			List<Map<String, Object>> rows = jdbcTemplate.queryForList(SELECT_IP_BY_CRITERIA_SQL,
+					new Object[] { commandLineArgs.getStartDate(), endDate, commandLineArgs.getThreshold()  } );
+			
+			for (Map<String, Object> row : rows) {
+				logger.info("Result from SELECT_IP_BY_CRITERIA_SQL {} ", row);
+				IPRequest iPRequest = new IPRequest();
+				iPRequest.setIp(row.get("INET_NTOA(ip_address)").toString());
+				String numRequest = row.get("COUNT(ip_address)").toString();
+				iPRequest.setNumberOfRequests(Integer.valueOf(numRequest));
+				iPRequests.add(iPRequest);
+			}
+			
+			return iPRequests;
+			
+		} catch (NullPointerException | DataAccessException e) {
+			logger.error(e.getMessage());
+			throw e;
 		}
-				
-		@Override
-		public int getBatchSize() {
-			return requests.size();
-		}
+		
+	}
+	
+	@Override
+	public boolean saveBlockedIps(List<IPRequest> ipRequests) {
+		
+		 jdbcTemplate.batchUpdate(INSERT_BLOCKED_IP_SQL, new BatchPreparedStatementSetter() {
 
-	  });
+			@Override
+			public void setValues(PreparedStatement ps, int i) throws SQLException {
+				IPRequest request = ipRequests.get(i);
+				//ps.setObject(1, new java.sql.Timestamp(request.getDate().getTime()));
+				ps.setString(1, request.getIp());
+				String reason = "Made requests: " + request.getNumberOfRequests();
+				ps.setString(2, reason );
+			}
+
+			@Override
+			public int getBatchSize() {
+				return ipRequests.size();
+			}
+
+		  });
+		
+		/*
+		// insert query to log blocked requests. Avoids insertion of duplicate records based on date_time, ip_address and duration value pairs.
+		INSERT_BLOCKED_IP_SQL
+		//PreparedStatement preparedInsertStmt = (PreparedStatement) conn.prepareStatement(insertQuery);
+		
+		final AtomicInteger counter = new AtomicInteger();
+		
+		while (rs.next()) {
+
+			String ipAddress = rs.getString("INET_NTOA(ip_address)");
+			String timestamp = rs.getString("date_time");
+			int numRequest = rs.getInt("COUNT(ip_address)");
+			logger.info("IP Address: " + ipAddress + " | # of Requests: " + numRequest + " | Timestamp: " + timestamp);
+			
+			preparedInsertStmt.setObject(1, parsedStartDate);
+			preparedInsertStmt.setString(2, ipAddress);
+			preparedInsertStmt.setString(3, duration.name());
+			preparedInsertStmt.setInt(4, numRequest);
+			String remark = "Request Exceed " + threshold + " from " + parsedStartDate + " to " + parsedEndDate;
+			preparedInsertStmt.setString(5, remark);
+			preparedInsertStmt.addBatch();
+			
+			counter.incrementAndGet();
+			if(counter.get() % 5000 == 0)
+				preparedStmt.executeBatch();
+		}
+		
+		preparedInsertStmt.executeBatch(); */
+		return true;
 	}
 
+	@Override
+	public boolean filterByIP(String ipAddress) {
+		return false;
+	}
+
+	/*
 	public boolean filterRequestData(Date parsedStartDate, Date parsedEndDate, DurationType duration, int threshold) {
 
 		String selectSQL = "SELECT id, INET_NTOA(ip_address), date_time, COUNT(ip_address) FROM request_log WHERE date_time >= ? AND date_time <= ? GROUP BY ip_address HAVING COUNT(ip_address) >= ?  ";
@@ -190,6 +266,29 @@ public class ParserRepoImpl implements ParserRepo {
 		}
 		
 		return true;
+	}*/
+	
+	private void executeInsertBatch(final List<ServerRequest> requests){
+		
+		 jdbcTemplate.batchUpdate(INSERT_REQUEST_LOG_SQL, new BatchPreparedStatementSetter() {
+
+			@Override
+			public void setValues(PreparedStatement ps, int i) throws SQLException {
+				ServerRequest request = requests.get(i);
+				ps.setObject(1, new java.sql.Timestamp(request.getDate().getTime()));
+				ps.setString(2, request.getIp());
+				ps.setString(3, request.getRequestMethod() );
+				ps.setString(4, request.getStatus() );
+				ps.setString(5, request.getUserAgent() );
+			}
+					
+			@Override
+			public int getBatchSize() {
+				return requests.size();
+			}
+
+		  });
+		 
 	}
 
 }
