@@ -5,12 +5,16 @@ import javax.sql.DataSource;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ef.observer.ConsoleLogger;
@@ -26,6 +30,9 @@ import com.zaxxer.hikari.HikariDataSource;
 @ComponentScan(basePackages = { "com.ef" })
 @PropertySource("classpath:application.properties")
 public class AppConfig {
+	
+	@Autowired
+	private Environment env;
 
 	@Bean
 	public ParserRepo parserRepo() {
@@ -58,10 +65,10 @@ public class AppConfig {
 	public DataSource hikariDataSource() {
 	    HikariConfig config = new HikariConfig();
 	    HikariDataSource ds;
-    	config.setDriverClassName("com.mysql.jdbc.Driver");
-        config.setJdbcUrl( "jdbc:mysql://localhost:3306/parser?useSSL=false&rewriteBatchedStatements=true" );
-        config.setUsername( "root" );
-        config.setPassword( "root" );
+    	config.setDriverClassName(env.getProperty("jdbc.driver"));
+        config.setJdbcUrl( env.getProperty("jdbc.url") );
+        config.setUsername( env.getProperty("jdbc.username") );
+        config.setPassword( env.getProperty("jdbc.password") );
         config.addDataSourceProperty( "cachePrepStmts" , "true" );
         config.addDataSourceProperty( "prepStmtCacheSize" , "250" );
         config.addDataSourceProperty( "prepStmtCacheSqlLimit" , "2048" );
@@ -77,5 +84,18 @@ public class AppConfig {
 		jdbcTemplate.setDataSource(hikariDataSource());
 		return jdbcTemplate;
 	}
-
+	
+	@Bean
+	public MessageSource messageSource() {
+		ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+		messageSource.setBasenames("classpath:message.properties");
+		// if true, the key of the message will be displayed if the key is not
+		// found, instead of throwing a NoSuchMessageException
+		messageSource.setUseCodeAsDefaultMessage(true);
+		messageSource.setDefaultEncoding("UTF-8");
+		// # -1 : never reload, 0 always reload
+		messageSource.setCacheSeconds(0);
+		return messageSource;
+	}
+	
 }

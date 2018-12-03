@@ -15,7 +15,7 @@ import com.ef.service.ParserService;
 @Controller
 public class ParserController {
 	
-	private final Logger LOGGER = LoggerFactory.getLogger(ParserController.class);
+	private final Logger logger = LoggerFactory.getLogger(ParserController.class);
 	
 	@Autowired
 	ParserService parserService;
@@ -53,7 +53,7 @@ public class ParserController {
 		 try {
 			 parserService.saveLog(pathToFile);
 		} catch (InvalidLogFileException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
 		 
 	}

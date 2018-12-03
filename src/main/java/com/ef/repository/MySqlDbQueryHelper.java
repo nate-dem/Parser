@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Profile("default")
-public class MySqlDbHelper implements DbQueryHelper {
+public class MySqlDbQueryHelper implements DbQueryHelper {
 	
 	private static final Map<String, String> queries = new HashMap<>();
 

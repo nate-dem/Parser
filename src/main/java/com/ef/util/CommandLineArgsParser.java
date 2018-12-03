@@ -1,7 +1,6 @@
 package com.ef.util;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.commons.cli.CommandLine;
@@ -16,7 +15,7 @@ import com.ef.model.DurationType;
 
 public class CommandLineArgsParser {
 	
-	private static final Logger LOGGER =  LoggerFactory.getLogger(CommandLineArgsParser.class);
+	private static final Logger logger =  LoggerFactory.getLogger(CommandLineArgsParser.class);
 	
 	private Options options;
 	private CommandLineParser parser;
@@ -64,12 +63,13 @@ public class CommandLineArgsParser {
 			
 			
 			int threshold = Integer.parseInt(thresholdInp);
-			Date startDate= new SimpleDateFormat(ParserConstants.START_DATE_FORMAT).parse(startDateInp);
+			
+			Date startDate= DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
 			
 			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
 			
 		} catch (ParseException | java.text.ParseException | NumberFormatException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 		}
 		
 		return commandLineArgs;
