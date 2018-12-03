@@ -5,7 +5,7 @@ public class ParserConstants {
 	public static final  String INVALID_DURATION = "Invalid Duration";
 	public static final String INVALID_IP =  "Invalid IP address";
 	public static final String INVALID_FILE = "Unable to parse requested File";
-	public static final String PROCESSING_QUERY = "Processing Request...";
+	public static final String PROCESSING_QUERY = "Processing Query...";
 	public static final String DB_IMPORT_COMPLETED =  "Database Insertion completed.";
 	public static final String DB_IMPORT =  "Inserting to db...";
 	public static final String LOG_FILE_DELIMITER =  "\\|";

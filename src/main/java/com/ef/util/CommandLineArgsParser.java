@@ -1,5 +1,6 @@
 package com.ef.util;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -50,7 +51,7 @@ public class CommandLineArgsParser {
 				validCmdLineInput = true;
 			}
 			
-			/*
+			
 			// mock args for testing
 			ClassLoader classLoader = getClass().getClassLoader();
 			File file = new File(classLoader.getResource("access.log").getFile());
@@ -60,7 +61,7 @@ public class CommandLineArgsParser {
 			durationInp = "daily";
 			startDateInp = "2017-01-01.00:00:00";
 			// end of mock
-			*/
+			
 			
 			int threshold = Integer.parseInt(thresholdInp);
 			Date startDate= new SimpleDateFormat(ParserConstants.START_DATE_FORMAT).parse(startDateInp);

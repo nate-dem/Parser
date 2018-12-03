@@ -18,6 +18,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ef.TestConfig;
+import com.ef.exception.InvalidLogFileException;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
@@ -53,7 +54,10 @@ public class ParserServiceTest {
 	}
 	
 	@Test
-	public void findBlockedIPsTest() {
+	public void findBlockedIPsTest() throws InvalidLogFileException {
+		
+		parserService.saveLog(commandLineArgs.getAccesslog());
+		
 		System.out.println(commandLineArgs);
 		
 		List<String> ips = parserService.findBlockedIPs(commandLineArgs)

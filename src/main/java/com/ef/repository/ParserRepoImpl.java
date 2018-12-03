@@ -41,18 +41,9 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	@Qualifier("customJdbcTemplate")
 	private JdbcTemplate jdbcTemplate;
 	
-	// mysql insert statement.  Avoids insertion of duplicate records based on start_date & ip_address value pairs.
-	private static final String INSERT_REQUEST_LOG = "insert ignore into LogEntries "
-			+ "(start_date, ip_address, request_method, status, user_agent) "
-			+ "values (?, INET_ATON(?), ?, ?, ?)";
+	@Autowired
+	DbQueryHelper dbQueryHelper;
 	
-	private static final String SELECT_IP_BY_CRITERIA = "SELECT id, INET_NTOA(ip_address), COUNT(ip_address) "
-			+ "FROM LogEntries "
-			+ "WHERE start_date >= ? AND start_date <= ? GROUP BY ip_address HAVING COUNT(ip_address) >= ?  ";
-	
-	private static final String INSERT_BLOCKED_IP = "insert ignore into BlockedIps (ip_address, num_request, reason) "
-			+ "VALUES (INET_ATON(?), ?, ?)";
-
 	public void saveLog(String pathToFile) throws InvalidLogFileException {
 		
 		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
@@ -106,14 +97,14 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			
 			LOGGER.info(ParserConstants.PROCESSING_QUERY);
 			
-			List<Map<String, Object>> rows = jdbcTemplate.queryForList(SELECT_IP_BY_CRITERIA,
+			List<Map<String, Object>> rows = jdbcTemplate.queryForList(dbQueryHelper.getQuery("SELECT_BLOCKED_IP"),
 					new Object[] { commandLineArgs.getStartDate(), endDate, commandLineArgs.getThreshold()  } );
 			
 			for (Map<String, Object> row : rows) {
 				// LOGGER.info("Result from SELECT_IP_BY_CRITERIA_SQL {} ", row);
 				BlockedIP blockedIP = new BlockedIP();
-				blockedIP.setIP(row.get("INET_NTOA(ip_address)").toString());
-				String numRequest = row.get("COUNT(ip_address)").toString();
+				blockedIP.setIP(row.get("IP_ADDRESS").toString());
+				String numRequest = row.get("COUNT(IP_ADDRESS)").toString();
 				blockedIP.setNumberOfRequests(Integer.valueOf(numRequest));
 				blockedIP.setReason("Request exceeds " + commandLineArgs.getDuration() + " limit");
 				blockedIPs.add(blockedIP);
@@ -124,6 +115,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			
 		} catch (NullPointerException | DataAccessException e) {
 			LOGGER.error(e.getMessage());
+			e.printStackTrace();
 			throw e;
 		}
 		
@@ -132,7 +124,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	@Override
 	public int[] saveBlockedIPs(List<BlockedIP> blockedIPs) {
 		
-		return jdbcTemplate.batchUpdate(INSERT_BLOCKED_IP, new BatchPreparedStatementSetter() {
+		return jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"), new BatchPreparedStatementSetter() {
 
 			@Override
 			public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -159,9 +151,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	/*
 	
 	public boolean findByIP(String ipAddress) {
-
-		String selectSQL = "SELECT id, INET_NTOA(ip_address), date_time FROM request_log WHERE ip_address = INET_ATON(?) ";
-
+		String selectSQL = "SELECT id, INET_NTOA(IP_ADDRESS), date_time FROM request_log WHERE IP_ADDRESS = INET_ATON(?) ";
 		try (Connection conn = DBConnection.getConnection(); PreparedStatement preparedStmt = (PreparedStatement) conn.prepareStatement(selectSQL)) {
 			preparedStmt.setObject(1, ipAddress);
 			// execute select SQL statement
@@ -173,7 +163,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 				return false;
 			}
 			while (rs.next()) {
-				ipAddress = rs.getString("INET_NTOA(ip_address)");
+				ipAddress = rs.getString("INET_NTOA(IP_ADDRESS)");
 				String timeStamp = rs.getString("date_time");
 				logger.info("IP Address : " + ipAddress+ " | Timestamp : " + timeStamp);
 			}
@@ -186,7 +176,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	
 	private void executeSaveLogBatch(final List<LogEntry> entries){
 		
-		 jdbcTemplate.batchUpdate(INSERT_REQUEST_LOG, new BatchPreparedStatementSetter() {
+		 jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_LOG_ENTRY"), new BatchPreparedStatementSetter() {
 
 			@Override
 			public void setValues(PreparedStatement ps, int i) throws SQLException {

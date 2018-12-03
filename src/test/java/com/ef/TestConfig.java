@@ -10,10 +10,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.test.context.ActiveProfiles;
 
 import com.ef.observer.ConsoleLogger;
 import com.ef.observer.Observer;
@@ -24,6 +26,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
+@PropertySource("classpath:application-test.properties")
 @ComponentScan(basePackages = { "com.ef" })
 public class TestConfig {
 
@@ -77,7 +80,7 @@ public class TestConfig {
 		// no need shutdown, EmbeddedDatabaseFactoryBean will take care of this
 		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
 		EmbeddedDatabase db = builder
-			.setName("testDB;MODE=MySQL")
+			.setName("testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;") // DATABASE_TO_UPPER=false;
 			.setType(EmbeddedDatabaseType.H2)
 			.addScript("h2db-schema.sql")
 			.build();
@@ -88,6 +91,7 @@ public class TestConfig {
 	@Qualifier("customJdbcTemplate")
 	public JdbcTemplate jdbcTemplate() {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate();
+		jdbcTemplate.setResultsMapCaseInsensitive(true);
 		jdbcTemplate.setDataSource(dataSource());
 		return jdbcTemplate;
 	}

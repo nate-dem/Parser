@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ef.observer.ConsoleLogger;
@@ -23,6 +24,7 @@ import com.zaxxer.hikari.HikariDataSource;
 @Configuration
 @EnableAspectJAutoProxy
 @ComponentScan(basePackages = { "com.ef" })
+@PropertySource("classpath:application.properties")
 public class AppConfig {
 
 	@Bean
