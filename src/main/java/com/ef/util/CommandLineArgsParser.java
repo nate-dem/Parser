@@ -10,6 +10,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ef.exception.CommandLineArgsParseException;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
 
@@ -25,7 +26,7 @@ public class CommandLineArgsParser {
 		this.parser = parser;
 	}
 
-	public CommandLineArgs parseArguments(String[] args){
+	public CommandLineArgs parseArguments(String[] args) throws CommandLineArgsParseException {
 
 		String startDateInp = null;
 		String durationInp = null;
@@ -37,19 +38,18 @@ public class CommandLineArgsParser {
 		try {
 			CommandLine cmd = parser.parse(options, args);
 
-			// Parse arg: accesslog
+			// parse arg: accesslog
 			if (cmd.getOptionValue("a") != null ) {
 				accesslogInp = cmd.getOptionValue("a");
 			}
 			
-			 // Parse args: startDate, duration, threshold
+			 // parse args: startDate, duration, threshold
 			if (cmd.getOptionValue("s") != null && cmd.getOptionValue("d") != null && cmd.getOptionValue("t") != null) {
 				startDateInp = cmd.getOptionValue("s");
 				durationInp = cmd.getOptionValue("d");
 				thresholdInp = cmd.getOptionValue("t");
 				validCmdLineInput = true;
 			}
-			
 			
 			// mock args for testing
 			ClassLoader classLoader = getClass().getClassLoader();
@@ -61,15 +61,13 @@ public class CommandLineArgsParser {
 			startDateInp = "2017-01-01.00:00:00";
 			// end of mock
 			
-			
 			int threshold = Integer.parseInt(thresholdInp);
-			
 			Date startDate= DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
 			
 			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
 			
-		} catch (ParseException | java.text.ParseException | NumberFormatException e) {
-			logger.error(e.getMessage());
+		} catch (Exception e) {
+			throw new CommandLineArgsParseException(e.getMessage());
 		}
 		
 		return commandLineArgs;

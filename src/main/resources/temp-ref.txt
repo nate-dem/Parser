@@ -3,3 +3,4 @@ Ref:
 	 https://stackoverflow.com/questions/16038360/initialize-database-without-xml-configuration-but-using-configuration
 	 https://mdeinum.github.io/2018-07-04-PropertySource-with-yaml-files/
 	 https://dzone.com/articles/using-yaml-java-application
+	 https://www.mkyong.com/spring-mvc/spring-mvc-logback-slf4j-example/

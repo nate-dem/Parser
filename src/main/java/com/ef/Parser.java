@@ -3,10 +3,8 @@ package com.ef;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import com.ef.action.ParseAction;
 import com.ef.config.AppConfig;
-import com.ef.controller.ParserController;
-import com.ef.model.CommandLineArgs;
-import com.ef.util.CommandLineArgsParser;
 
 /*
  * Java parser that parses web server access log file and save to MySQL db.
@@ -21,12 +19,8 @@ public class Parser {
 		
 	    ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
 
-	    CommandLineArgsParser cmdLineArgsParser = ctx.getBean(CommandLineArgsParser.class);
-	    ParserController parserController = ctx.getBean(ParserController.class);
-	    
-		CommandLineArgs commandLineArgs = cmdLineArgsParser.parseArguments(args);
-		
-		parserController.processArgs(commandLineArgs);
+	    ParseAction parseAction = ctx.getBean(ParseAction.class);
+	    parseAction.execute(args);
 		
 		((AnnotationConfigApplicationContext)ctx).close();
 	}

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Profile("test")
-public class H2DbQueryHelper implements DbQueryHelper {
+public class H2QueryHelper implements DbQueryHelper {
 
 	private static final Map<String, String> queries = new HashMap<>();
 	
@@ -18,10 +18,10 @@ public class H2DbQueryHelper implements DbQueryHelper {
 	
 	private static final String SELECT_BLOCKED_IP = "SELECT IP_ADDRESS, COUNT(IP_ADDRESS) "
 			+ "FROM PARSER.LOG_ENTRIES "
-			+ "WHERE START_DATE >= ? AND START_DATE <= ? "
+			+ "WHERE START_DATE >= ? AND START_DATE < ? "
 			+ "GROUP BY IP_ADDRESS HAVING COUNT(IP_ADDRESS) >= ?";
 	
-	private static final String INSERT_BLOCKED_IP = "INSERT INTO BLOCKED_IPS (IP_ADDRESS, NUM_REQUEST, REASON) "
+	private static final String INSERT_BLOCKED_IP = "INSERT INTO PARSER.BLOCKED_IPS (IP_ADDRESS, NUM_REQUEST, REASON) "
 			+ "VALUES (?, ?, ?)";
 	
 	static {

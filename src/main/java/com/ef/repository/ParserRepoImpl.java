@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,21 +31,29 @@ import com.ef.model.CommandLineArgs;
 import com.ef.model.LogEntry;
 import com.ef.observer.Observable;
 import com.ef.observer.Observer;
+import com.ef.util.DateForamtter;
 import com.ef.util.ParserConstants;
 
 @Repository
 public class ParserRepoImpl implements ParserRepo, Observable {
 
-	private final Logger LOGGER = LoggerFactory.getLogger(ParserRepoImpl.class);
-	private List<Observer> observers = new ArrayList<>();
+	private final Logger logger = LoggerFactory.getLogger(ParserRepoImpl.class);
+	private final List<Observer> observers = new ArrayList<>();
 	
 	@Autowired
 	@Qualifier("customJdbcTemplate")
 	private JdbcTemplate jdbcTemplate;
 	
 	@Autowired
-	DbQueryHelper dbQueryHelper;
+	private DbQueryHelper dbQueryHelper;
 	
+	@Autowired
+	private MessageSource messageSource;
+	
+	@Autowired
+	private Environment env;
+	
+	@Override
 	public void saveLog(String pathToFile) throws InvalidLogFileException {
 		
 		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
@@ -55,7 +65,9 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 				String[] trimInput = str.split(ParserConstants.LOG_FILE_DELIMITER);
 				
 				try {
-					Date parsedDate = new SimpleDateFormat(ParserConstants.LOG_DATE_FORMAT).parse(trimInput[0]);
+					
+					Date parsedDate = DateForamtter.fromString(trimInput[0], env.getProperty("parser.log.date.format"));
+					//Date parsedDate = new SimpleDateFormat(env.getProperty("parser.log.date.format")).parse(trimInput[0]);
 
 					LogEntry serverRequest = new LogEntry();
 					serverRequest.setDate(parsedDate);
@@ -65,7 +77,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 					serverRequest.setUserAgent(trimInput[4]);
 					entries.add(serverRequest);
 					
-					LOGGER.info("processed " + counter.incrementAndGet());
+					logger.info("processed " + counter.incrementAndGet());
 					
 					if(entries.size() % 20000 == 0) {
 						executeSaveLogBatch(entries);
@@ -73,16 +85,17 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 					}
 						
 				} catch (ParseException e) {
-					LOGGER.error(e.getMessage());
+					logger.error(e.getMessage());
 				}
 			});
 			executeSaveLogBatch(entries);
 			entries.clear();
-			LOGGER.info(ParserConstants.DB_IMPORT_COMPLETED);
-			LOGGER.info("Time Taken to saveLog:  {} ms" , (System.currentTimeMillis()-start));
+			logger.info(ParserConstants.DB_IMPORT_COMPLETED);
+			
+			logger.info("Time Taken to saveLog:  {} ms" , (System.currentTimeMillis()-start));
 
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			throw new InvalidLogFileException(e.getMessage());
 		}
 		
@@ -95,13 +108,13 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 
 		try {
 			
-			LOGGER.info(ParserConstants.PROCESSING_QUERY);
+			logger.info(ParserConstants.PROCESSING_QUERY);
 			
 			List<Map<String, Object>> rows = jdbcTemplate.queryForList(dbQueryHelper.getQuery("SELECT_BLOCKED_IP"),
 					new Object[] { commandLineArgs.getStartDate(), endDate, commandLineArgs.getThreshold()  } );
 			
 			for (Map<String, Object> row : rows) {
-				// LOGGER.info("Result from SELECT_IP_BY_CRITERIA_SQL {} ", row);
+				// logger.info("Result from SELECT_IP_BY_CRITERIA_SQL {} ", row);
 				BlockedIP blockedIP = new BlockedIP();
 				blockedIP.setIP(row.get("IP_ADDRESS").toString());
 				String numRequest = row.get("COUNT(IP_ADDRESS)").toString();
@@ -114,7 +127,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			return blockedIPs;
 			
 		} catch (NullPointerException | DataAccessException e) {
-			LOGGER.error(e.getMessage());
+			logger.error(e.getMessage());
 			e.printStackTrace();
 			throw e;
 		}

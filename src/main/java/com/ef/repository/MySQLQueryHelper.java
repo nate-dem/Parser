@@ -8,20 +8,20 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Profile("default")
-public class MySqlDbQueryHelper implements DbQueryHelper {
+public class MySQLQueryHelper implements DbQueryHelper {
 	
 	private static final Map<String, String> queries = new HashMap<>();
 
-	private static final String INSERT_LOG_ENTRY = "INSERT IGNORE INTO LOG_ENTRIES "
+	private static final String INSERT_LOG_ENTRY = "INSERT IGNORE INTO PARSER.LOG_ENTRIES "
 			+ "(START_DATE, IP_ADDRESS, REQUEST_METHOD, STATUS, USER_AGENT) "
 			+ "VALUES (?, INET_ATON(?), ?, ?, ?)";
 	
 	private static final String SELECT_BLOCKED_IP = "SELECT INET_NTOA(IP_ADDRESS) AS IP_ADDRESS, COUNT(IP_ADDRESS) "
-			+ "FROM LOG_ENTRIES "
-			+ "WHERE START_DATE >= ? AND START_DATE <= ? "
+			+ "FROM PARSER.LOG_ENTRIES "
+			+ "WHERE START_DATE >= ? AND START_DATE < ? "
 			+ "GROUP BY IP_ADDRESS HAVING COUNT(IP_ADDRESS) >= ?";
 	
-	private static final String INSERT_BLOCKED_IP = "INSERT IGNORE INTO BLOCKED_IPS (IP_ADDRESS, NUM_REQUEST, REASON) "
+	private static final String INSERT_BLOCKED_IP = "INSERT IGNORE INTO PARSER.BLOCKED_IPS (IP_ADDRESS, NUM_REQUEST, REASON) "
 			+ "VALUES (INET_ATON(?), ?, ?)";
 	
 	static {

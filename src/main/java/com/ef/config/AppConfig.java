@@ -1,6 +1,9 @@
 package com.ef.config;
 
 import javax.sql.DataSource;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -61,6 +64,7 @@ public class AppConfig {
 		return new CommandLineArgsParser(options, parser);
 	}
 
+	
 	@Bean
 	public DataSource hikariDataSource() {
 	    HikariConfig config = new HikariConfig();
@@ -76,6 +80,20 @@ public class AppConfig {
 	    
 		return ds;
 	}
+	/*
+	@Bean
+	@Qualifier("h2DataSource")
+	public DataSource h2DataSource() {
+		
+		// no need shutdown, EmbeddedDatabaseFactoryBean will take care of this
+		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+		EmbeddedDatabase db = builder
+			.setName("testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;") // DATABASE_TO_UPPER=false;
+			.setType(EmbeddedDatabaseType.H2)
+			.addScript("h2db-schema.sql")
+			.build();
+		return db;
+	}*/
 
 	@Bean
 	@Qualifier("customJdbcTemplate")
@@ -85,17 +103,21 @@ public class AppConfig {
 		return jdbcTemplate;
 	}
 	
-	@Bean
+    @Bean
 	public MessageSource messageSource() {
 		ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-		messageSource.setBasenames("classpath:message.properties");
-		// if true, the key of the message will be displayed if the key is not
-		// found, instead of throwing a NoSuchMessageException
+		messageSource.setBasenames("classpath:messages");
 		messageSource.setUseCodeAsDefaultMessage(true);
 		messageSource.setDefaultEncoding("UTF-8");
 		// # -1 : never reload, 0 always reload
 		messageSource.setCacheSeconds(0);
-		return messageSource;
+	    return messageSource;
+	}
+
+	@Bean
+	public Validator getValidator(){
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		return factory.getValidator();
 	}
 	
 }

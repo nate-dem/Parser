@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.validator.routines.InetAddressValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,5 +117,25 @@ public class FileFilterServiceImpl implements FileFilterService {
 
 		return false;
 	}
+	
+	/*
+	 * Find requests made by a given IP.
+	 * @param ipAddress
+	 */
+	@Override
+	public boolean findByIP(String ipAddress) {
+
+		InetAddressValidator inetValidator = InetAddressValidator.getInstance();
+
+		// validate IP address
+		if (null == ipAddress  || ipAddress.equals("") || !inetValidator.isValidInet4Address(ipAddress)) {
+			LOGGER.error(ParserConstants.INVALID_IP);
+			return false;
+		}
+
+		// return parserRepo.findByIP(ipAddress);
+		return true;
+
+	}	
 
 }

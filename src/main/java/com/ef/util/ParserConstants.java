@@ -2,7 +2,7 @@ package com.ef.util;
 
 public class ParserConstants {
 	public static final  String NO_RESULT_FOUND = "No Result Found";
-	public static final  String INVALID_DURATION = "Invalid Duration";
+	public static final  String INVALID_DURATION = "Invalid Duration Input";
 	public static final String INVALID_IP =  "Invalid IP address";
 	public static final String INVALID_FILE = "Unable to parse requested File";
 	public static final String PROCESSING_QUERY = "Processing Query...";

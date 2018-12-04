@@ -11,7 +11,6 @@ public class DateForamtter {
 		try {
 			return new SimpleDateFormat(format).parse(date);
 		} catch (ParseException e) {
-			e.printStackTrace();
 			throw e;
 		}
 		

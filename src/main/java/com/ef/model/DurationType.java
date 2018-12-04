@@ -16,7 +16,7 @@ public enum DurationType {
     
 	public static DurationType fromValue(String v) {
 		for (DurationType rt : DurationType.values()) {
-			if (rt.value.equals(v)) {
+			if (rt.value.equalsIgnoreCase(v)) {
 				return rt;
 			}
 		}

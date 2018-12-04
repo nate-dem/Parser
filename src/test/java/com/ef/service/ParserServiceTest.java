@@ -19,6 +19,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ef.TestConfig;
 import com.ef.exception.InvalidLogFileException;
+import com.ef.exception.ParserServiceException;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
@@ -54,7 +55,7 @@ public class ParserServiceTest {
 	}
 	
 	@Test
-	public void findBlockedIPsTest() throws InvalidLogFileException {
+	public void findBlockedIPsTest() throws InvalidLogFileException, ParserServiceException {
 		
 		parserService.saveLog(commandLineArgs.getAccesslog());
 		

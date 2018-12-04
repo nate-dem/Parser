@@ -2,10 +2,19 @@ package com.ef.model;
 
 import java.util.Date;
 
+import javax.validation.constraints.NotNull;
+
 public class CommandLineArgs {
+	
+	@NotNull(message = "Invalid StartDate arg")
 	private Date startDate;
+	
+	@NotNull
 	private DurationType duration;
+	
+	@NotNull
 	private Integer threshold;
+	
 	private String accesslog;
 	
 	public CommandLineArgs(Date startDate, DurationType duration, Integer threshold, String accesslog) {
