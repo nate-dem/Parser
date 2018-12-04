@@ -1,10 +1,10 @@
 package com.ef.exception;
 
-public class ParserServiceException extends Exception  {
+public class DBOperationException extends Exception  {
 	
 		private static final long serialVersionUID = 1L;
 		
-		public ParserServiceException(String msg) {
+		public DBOperationException(String msg) {
 			super(msg);
 		}
 

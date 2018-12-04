@@ -1,11 +1,12 @@
 package com.ef.repository;
 
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
@@ -30,15 +31,14 @@ import com.ef.exception.InvalidLogFileException;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.LogEntry;
-import com.ef.observer.Observable;
 import com.ef.observer.Observer;
 import com.ef.util.DateForamtter;
 
 @Repository
-public class ParserRepoImpl implements ParserRepo, Observable {
+public class ParserRepoImpl implements ParserRepo {
 
 	private final Logger logger = LoggerFactory.getLogger(ParserRepoImpl.class);
-	private final List<Observer> observers = new ArrayList<>();
+	private final List<Observer<String>> observers = new ArrayList<>();
 	
 	@Autowired
 	@Qualifier("customJdbcTemplate")
@@ -56,32 +56,33 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	@Override
 	public void saveLog(String pathToFile) throws InvalidLogFileException {
 		
-		try (Stream<String> stream = Files.lines(Paths.get(pathToFile))) {
+		try (Stream<String> lines = Files.lines(Paths.get(pathToFile))) {
 
 			final AtomicInteger counter = new AtomicInteger();
 			List<LogEntry> entries = new ArrayList<>();
 			long start = System.currentTimeMillis();
-			stream.forEach(str -> {
-				//String[] trimInput = str.split(ParserConstants.LOG_FILE_DELIMITER);
-				String[] trimInput = str.split(env.getProperty("parser.log.file.delimiter"));
+			lines.forEach(line -> {
+				String[] lineArr = line.split(env.getProperty("parser.log.file.delimiter"));
+				
+				if(lineArr.length != 5)
+					return;
 				
 				try {
 					
-					Date parsedDate = DateForamtter.fromString(trimInput[0], env.getProperty("parser.log.date.format"));
-					//Date parsedDate = new SimpleDateFormat(env.getProperty("parser.log.date.format")).parse(trimInput[0]);
+					Date parsedDate = DateForamtter.fromString(lineArr[0], env.getProperty("parser.log.date.format"));
 
-					LogEntry serverRequest = new LogEntry();
-					serverRequest.setDate(parsedDate);
-					serverRequest.setIP(trimInput[1]);
-					serverRequest.setRequestMethod(trimInput[2]);
-					serverRequest.setStatus(trimInput[3]);
-					serverRequest.setUserAgent(trimInput[4]);
-					entries.add(serverRequest);
+					LogEntry entry = new LogEntry();
+					entry.setDate(parsedDate);
+					entry.setIP(lineArr[1]);
+					entry.setRequestMethod(lineArr[2]);
+					entry.setStatus(lineArr[3]);
+					entry.setUserAgent(lineArr[4]);
+					entries.add(entry);
 					
-					logger.info(messageSource.getMessage("parser.action.db.import.status", new Object[]{counter.incrementAndGet()}, Locale.US) );
+					logger.info(messageSource.getMessage("parser.action.db.save.status", new Object[]{counter.incrementAndGet()}, Locale.US) );
 					
 					if(entries.size() % 20000 == 0) {
-						executeSaveLogBatch(entries);
+						saveLogsInBatch(entries);
 						entries.clear();
 					}
 						
@@ -89,14 +90,20 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 					logger.error(e.getMessage());
 				}
 			});
-			executeSaveLogBatch(entries);
-			entries.clear();
-			logger.info(messageSource.getMessage("parser.action.db.import.complete", null, Locale.US));
-			logger.info(messageSource.getMessage("parser.action.db.import.elapsed.time", new Object[]{ (System.currentTimeMillis()-start) }, Locale.US));
-
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-			throw new InvalidLogFileException(e.getMessage());
+			
+			if(!entries.isEmpty()) {
+				saveLogsInBatch(entries);
+				entries.clear();
+			}
+			if(counter.get() > 0) {
+				logger.info(messageSource.getMessage("parser.action.db.save.complete", null, Locale.US));
+				logger.info(messageSource.getMessage("parser.action.db.save.elapsed.time", new Object[]{ (System.currentTimeMillis()-start) }, Locale.US));	
+			} else {
+				logger.info(messageSource.getMessage("parser.action.db.not.saved", null, Locale.US));
+			}
+			
+		} catch (IOException | InvalidPathException  e) {
+			throw new InvalidLogFileException("Error saving log: " + e);
 		}
 		
 	}
@@ -127,9 +134,8 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			
 			return blockedIPs;
 			
-		} catch (NullPointerException | DataAccessException e) {
+		} catch (DataAccessException e) {
 			logger.error(e.getMessage());
-			e.printStackTrace();
 			throw e;
 		}
 		
@@ -138,6 +144,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	@Override
 	public int[] saveBlockedIPs(List<BlockedIP> blockedIPs) {
 		
+		try {
 		return jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"), new BatchPreparedStatementSetter() {
 
 			@Override
@@ -154,42 +161,15 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 				return blockedIPs.size();
 			}
 		  });
-		
-	}
-
-	@Override
-	public boolean findByIP(String ipAddress) {
-		return false;
-	}
-
-	/*
-	
-	public boolean findByIP(String ipAddress) {
-		String selectSQL = "SELECT id, INET_NTOA(IP_ADDRESS), date_time FROM request_log WHERE IP_ADDRESS = INET_ATON(?) ";
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement preparedStmt = (PreparedStatement) conn.prepareStatement(selectSQL)) {
-			preparedStmt.setObject(1, ipAddress);
-			// execute select SQL statement
-			ResultSet rs = preparedStmt.executeQuery();
-			logger.info(ParserConstants.PROCESSING_QUERY);
-			
-			if (!rs.isBeforeFirst()) {
-				logger.info(ParserConstants.NO_RESULT_FOUND);
-				return false;
-			}
-			while (rs.next()) {
-				ipAddress = rs.getString("INET_NTOA(IP_ADDRESS)");
-				String timeStamp = rs.getString("date_time");
-				logger.info("IP Address : " + ipAddress+ " | Timestamp : " + timeStamp);
-			}
-		} catch (NullPointerException | SQLException e) {
+		} catch(DataAccessException e) {
 			logger.error(e.getMessage());
+			throw e;
 		}
+	}
+
+	private void saveLogsInBatch(final List<LogEntry> entries) {
 		
-		return true;
-	}*/
-	
-	private void executeSaveLogBatch(final List<LogEntry> entries){
-		
+		try {
 		 jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_LOG_ENTRY"), new BatchPreparedStatementSetter() {
 
 			@Override
@@ -208,6 +188,10 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			}
 
 		  });
+		} catch(DataAccessException e) {
+			logger.error(e.getMessage());
+			throw e;
+		}
 		 
 	}
 	
@@ -217,12 +201,12 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 	}
 
 	@Override
-	public void addObserver(Observer observer) {
+	public void addObserver(Observer<String> observer) {
 		observers.add(observer);
 	}
 
 	@Override
-	public void removeObserver(Observer observer) {
+	public void removeObserver(Observer<String> observer) {
 		observers.remove(observer);
 	}
 

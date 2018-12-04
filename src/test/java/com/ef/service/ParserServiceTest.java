@@ -5,7 +5,6 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -23,7 +23,7 @@ import com.ef.exception.ParserServiceException;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
-import com.ef.util.ParserConstants;
+import com.ef.util.DateForamtter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {TestConfig.class})
@@ -36,7 +36,10 @@ public class ParserServiceTest {
 	CommandLineArgs commandLineArgs = null;
 	
 	@Autowired
-	ParserService parserService;
+	private ParserService parserService;
+	
+	@Autowired
+	private Environment env;
 	
 	@Before
 	public void prepare() throws ParseException {
@@ -49,7 +52,7 @@ public class ParserServiceTest {
 		startDateInp = "2017-01-01.00:00:00";
 		
 		int threshold = Integer.parseInt(thresholdInp);
-		Date startDate= new SimpleDateFormat(ParserConstants.START_DATE_FORMAT).parse(startDateInp);
+		Date startDate = DateForamtter.fromString(startDateInp, env.getProperty("parser.start.date.format"));
 		
 		commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
 	}

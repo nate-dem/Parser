@@ -75,8 +75,7 @@ public class ParserServiceImpl implements ParserService {
 		} else if (durationType == DurationType.DAILY ) {
 			calendar.set(Calendar.HOUR_OF_DAY, Calendar.HOUR_OF_DAY + 24);
 		} else {
-			logger.error(messageSource.getMessage("parser.validation.error.invalid.duration", null, Locale.US));
-			throw new ParserServiceException();
+			throw new ParserServiceException(messageSource.getMessage("parser.validation.error.invalid.duration", null, Locale.US));
 		}
 		
 		return calendar.getTime();

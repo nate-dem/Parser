@@ -20,7 +20,7 @@ public enum DurationType {
 				return rt;
 			}
 		}
-		throw new IllegalArgumentException(v);
+		throw new IllegalArgumentException("Invalid Duration: "+ v);
 	}
 	
 }

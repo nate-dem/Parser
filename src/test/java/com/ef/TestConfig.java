@@ -31,7 +31,7 @@ public class TestConfig {
 	@Bean
 	public ParserRepo parserRepo() {
 		ParserRepo parserRepo = new ParserRepoImpl();
-		Observer consoleLogger = new ConsoleLogger();
+		Observer<String> consoleLogger = new ConsoleLogger();
 		parserRepo.addObserver(consoleLogger);
 		return parserRepo;
 	}
@@ -61,7 +61,7 @@ public class TestConfig {
 		// no need shutdown, EmbeddedDatabaseFactoryBean will take care of this
 		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
 		EmbeddedDatabase db = builder
-			.setName("testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;") // DATABASE_TO_UPPER=false;
+			.setName("testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;")
 			.setType(EmbeddedDatabaseType.H2)
 			.addScript("h2db-schema.sql")
 			.build();

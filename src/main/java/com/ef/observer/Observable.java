@@ -1,11 +1,11 @@
 package com.ef.observer;
 
-public interface Observable {
+public interface Observable <T> {
 	
-	public void notifyObservers(String msg);
+	public void notifyObservers(T msg);
 	
-	public void addObserver(Observer observer);
+	public void addObserver(Observer<T> observer);
 	
-	public void removeObserver(Observer observer);
+	public void removeObserver(Observer<T> observer);
 	
 }

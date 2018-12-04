@@ -59,20 +59,20 @@ public class CommandLineArgsParser {
 			// mock args for testing
 			ClassLoader classLoader = getClass().getClassLoader();
 			File file = new File(classLoader.getResource("access.log").getFile());
-			
+			/*
 			accesslogInp = file.getAbsolutePath(); // "C:/ef/access.log";
 			thresholdInp = "500";
 			durationInp = "daily";
 			startDateInp = "2017-01-01.00:00:00";
 			// end of mock
-			
+			*/
 			int threshold = Integer.parseInt(thresholdInp);
 			Date startDate= DateForamtter.fromString(startDateInp, env.getProperty("parser.start.date.format"));
 			
 			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
 			
-		} catch (Exception e) {
-			throw new CommandLineArgsParseException(e.getMessage());
+		} catch (NumberFormatException | ParseException | java.text.ParseException  e) {
+			throw new CommandLineArgsParseException("Unable to parse cmd args: " + e.getMessage());
 		}
 		
 		return commandLineArgs;

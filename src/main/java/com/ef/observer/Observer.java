@@ -1,7 +1,7 @@
 package com.ef.observer;
 
-public interface Observer {
+public interface Observer<T> {
 	
-	public void update(String msg);
+	public void update(T msg);
 
 }
