@@ -1,9 +1,6 @@
 package com.ef;
 
 import javax.sql.DataSource;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -90,11 +87,5 @@ public class TestConfig {
 		messageSource.setCacheSeconds(0);
 	    return messageSource;
 	}
-
-	@Bean
-	public Validator getValidator(){
-		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-		return factory.getValidator();
-	}	
 
 }

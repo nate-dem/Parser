@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -32,7 +33,6 @@ import com.ef.model.LogEntry;
 import com.ef.observer.Observable;
 import com.ef.observer.Observer;
 import com.ef.util.DateForamtter;
-import com.ef.util.ParserConstants;
 
 @Repository
 public class ParserRepoImpl implements ParserRepo, Observable {
@@ -62,7 +62,8 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			List<LogEntry> entries = new ArrayList<>();
 			long start = System.currentTimeMillis();
 			stream.forEach(str -> {
-				String[] trimInput = str.split(ParserConstants.LOG_FILE_DELIMITER);
+				//String[] trimInput = str.split(ParserConstants.LOG_FILE_DELIMITER);
+				String[] trimInput = str.split(env.getProperty("parser.log.file.delimiter"));
 				
 				try {
 					
@@ -77,7 +78,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 					serverRequest.setUserAgent(trimInput[4]);
 					entries.add(serverRequest);
 					
-					logger.info("processed " + counter.incrementAndGet());
+					logger.info(messageSource.getMessage("parser.action.db.import.status", new Object[]{counter.incrementAndGet()}, Locale.US) );
 					
 					if(entries.size() % 20000 == 0) {
 						executeSaveLogBatch(entries);
@@ -90,9 +91,8 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 			});
 			executeSaveLogBatch(entries);
 			entries.clear();
-			logger.info(ParserConstants.DB_IMPORT_COMPLETED);
-			
-			logger.info("Time Taken to saveLog:  {} ms" , (System.currentTimeMillis()-start));
+			logger.info(messageSource.getMessage("parser.action.db.import.complete", null, Locale.US));
+			logger.info(messageSource.getMessage("parser.action.db.import.elapsed.time", new Object[]{ (System.currentTimeMillis()-start) }, Locale.US));
 
 		} catch (Exception e) {
 			logger.error(e.getMessage());
@@ -108,7 +108,7 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 
 		try {
 			
-			logger.info(ParserConstants.PROCESSING_QUERY);
+			logger.info(messageSource.getMessage("parser.action.find.blocked.ips", null, Locale.US));
 			
 			List<Map<String, Object>> rows = jdbcTemplate.queryForList(dbQueryHelper.getQuery("SELECT_BLOCKED_IP"),
 					new Object[] { commandLineArgs.getStartDate(), endDate, commandLineArgs.getThreshold()  } );
@@ -119,7 +119,8 @@ public class ParserRepoImpl implements ParserRepo, Observable {
 				blockedIP.setIP(row.get("IP_ADDRESS").toString());
 				String numRequest = row.get("COUNT(IP_ADDRESS)").toString();
 				blockedIP.setNumberOfRequests(Integer.valueOf(numRequest));
-				blockedIP.setReason("Request exceeds " + commandLineArgs.getDuration() + " limit");
+				String reason = messageSource.getMessage("parser.ip.block.reaso", new Object[]{ commandLineArgs.getDuration() }, Locale.US);
+				blockedIP.setReason(reason);
 				blockedIPs.add(blockedIP);
 				notifyObservers("IP: " + blockedIP.getIP() + " | NumberOfRequests: "+ blockedIP.getNumberOfRequests() );
 			}

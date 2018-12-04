@@ -9,6 +9,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 
 import com.ef.exception.CommandLineArgsParseException;
 import com.ef.model.CommandLineArgs;
@@ -20,6 +22,9 @@ public class CommandLineArgsParser {
 	
 	private Options options;
 	private CommandLineParser parser;
+	
+	@Autowired
+	private Environment env;
 	
 	public CommandLineArgsParser(Options options, CommandLineParser parser){
 		this.options = options;
@@ -62,7 +67,7 @@ public class CommandLineArgsParser {
 			// end of mock
 			
 			int threshold = Integer.parseInt(thresholdInp);
-			Date startDate= DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
+			Date startDate= DateForamtter.fromString(startDateInp, env.getProperty("parser.start.date.format"));
 			
 			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
 			

@@ -18,7 +18,6 @@ import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
 import com.ef.repository.ParserRepo;
-import com.ef.util.ParserConstants;
 
 @Service
 public class ParserServiceImpl implements ParserService {

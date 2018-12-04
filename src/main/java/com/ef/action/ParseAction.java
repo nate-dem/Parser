@@ -25,9 +25,6 @@ public class ParseAction {
 	@Autowired
 	private ParserService parserService;
 
-	//@Autowired
-	//private Validator validator;
-	
 	@Autowired
 	private MessageSource messageSource;
 	
@@ -38,16 +35,6 @@ public class ParseAction {
 		
 		CommandLineArgs commandLineArgs = parseArgs(args);
 		
-		/*
-		Set<ConstraintViolation<CommandLineArgs>> violations = validator.validate(commandLineArgs);
-		
-		if(!violations.isEmpty()){
-			for (ConstraintViolation<CommandLineArgs> violation : violations) {
-				logger.error(violation.getMessage()); 
-			}
-			return;
-		}*/
-
 		System.out.println(commandLineArgs);
 		String pathToFile = commandLineArgs.getAccesslog();
 		
