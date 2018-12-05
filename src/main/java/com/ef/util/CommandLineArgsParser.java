@@ -15,13 +15,13 @@ import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
 
 public class CommandLineArgsParser {
-	
-	private static final Logger logger =  LoggerFactory.getLogger(CommandLineArgsParser.class);
-	
+
+	private static final Logger logger = LoggerFactory.getLogger(CommandLineArgsParser.class);
+
 	private Options options;
 	private CommandLineParser parser;
-	
-	public CommandLineArgsParser(Options options, CommandLineParser parser){
+
+	public CommandLineArgsParser(Options options, CommandLineParser parser) {
 		this.options = options;
 		this.parser = parser;
 	}
@@ -33,41 +33,42 @@ public class CommandLineArgsParser {
 		String thresholdInp = null;
 		String accesslogInp = null;
 		CommandLineArgs commandLineArgs = null;
-		
+
 		try {
 			CommandLine cmd = parser.parse(options, args);
 
 			// parse arg: accesslog
-			if (cmd.getOptionValue("a") != null ) {
+			if (cmd.getOptionValue("a") != null) {
 				accesslogInp = cmd.getOptionValue("a");
 			}
-			
-			 // parse args: startDate, duration, threshold
+
+			// parse args: startDate, duration, threshold
 			if (cmd.getOptionValue("s") != null && cmd.getOptionValue("d") != null && cmd.getOptionValue("t") != null) {
 				startDateInp = cmd.getOptionValue("s");
 				durationInp = cmd.getOptionValue("d");
 				thresholdInp = cmd.getOptionValue("t");
 			}
-			
+
 			// mock args for testing
 			ClassLoader classLoader = getClass().getClassLoader();
 			File file = new File(classLoader.getResource("access.log").getFile());
-			
-			accesslogInp = file.getAbsolutePath(); // "C:/ef/access.log";
+
+			accesslogInp = file.getAbsolutePath();
 			thresholdInp = "500";
 			durationInp = "daily";
 			startDateInp = "2017-01-01.00:00:00";
 			// end of mock
-			
+
 			int threshold = Integer.parseInt(thresholdInp);
-			Date startDate= DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
-			
-			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
-			
-		} catch (NumberFormatException | ParseException | java.text.ParseException  e) {
+			Date startDate = DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
+
+			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold,
+					accesslogInp);
+
+		} catch (NumberFormatException | ParseException | java.text.ParseException e) {
 			throw new CommandLineArgsParseException("Unable to parse cmd args: " + e.getMessage());
 		}
-		
+
 		return commandLineArgs;
 
 	}

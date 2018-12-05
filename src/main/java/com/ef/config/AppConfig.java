@@ -24,7 +24,7 @@ import com.ef.util.CommandLineArgsParser;
 @ComponentScan(basePackages = { "com.ef" })
 @PropertySource("classpath:application.properties")
 public class AppConfig {
-	
+
 	@Bean
 	public ParserRepo parserRepo() {
 		ParserRepo parserRepo = new ParserRepoImpl();
@@ -51,8 +51,8 @@ public class AppConfig {
 		CommandLineParser parser = new DefaultParser();
 		return new CommandLineArgsParser(options, parser);
 	}
-	
-    @Bean
+
+	@Bean
 	public MessageSource messageSource() {
 		ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
 		messageSource.setBasenames("classpath:messages");
@@ -60,7 +60,7 @@ public class AppConfig {
 		messageSource.setDefaultEncoding("UTF-8");
 		// # -1 : never reload, 0 always reload
 		messageSource.setCacheSeconds(0);
-	    return messageSource;
+		return messageSource;
 	}
 
 }

@@ -3,13 +3,13 @@ package com.ef.model;
 import java.util.Date;
 
 public class LogEntry {
-	
+
 	private Date date;
 	private String IP;
 	private String requestMethod;
 	private String status;
 	private String userAgent;
-	
+
 	public LogEntry() {
 	}
 
@@ -25,19 +25,23 @@ public class LogEntry {
 	public Date getDate() {
 		return date;
 	}
+
 	public String getIP() {
 		return IP;
 	}
+
 	public String getRequestMethod() {
 		return requestMethod;
 	}
+
 	public String getStatus() {
 		return status;
 	}
+
 	public String getUserAgent() {
 		return userAgent;
 	}
-	
+
 	public void setDate(Date date) {
 		this.date = date;
 	}
@@ -60,8 +64,8 @@ public class LogEntry {
 
 	@Override
 	public String toString() {
-		return "ServerRequest [date=" + date + ", IP=" + IP + ", requestDetail=" + requestMethod 
-				+ ", userAgent=" + userAgent + "]";
+		return "ServerRequest [date=" + date + ", IP=" + IP + ", requestDetail=" + requestMethod + ", userAgent="
+				+ userAgent + "]";
 	}
-	
+
 }

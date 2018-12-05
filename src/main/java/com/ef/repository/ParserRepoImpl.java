@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -21,7 +22,7 @@ import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.LogEntry;
 import com.ef.observer.Observer;
-import com.ef.repository.query.DbQueryHelper;
+import com.ef.repository.helper.DbQueryHelper;
 
 @Repository
 public class ParserRepoImpl implements ParserRepo {
@@ -56,29 +57,27 @@ public class ParserRepoImpl implements ParserRepo {
 					public int getBatchSize() {
 						return entries.size();
 					}
-			});
-		
+				});
 		return countAffectedRows(affectedRows);
 
 	}
-	
+
 	@Override
 	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs, Date endDate) {
 
 		List<BlockedIP> blockedIPs = new LinkedList<>();
 
-		logger.info("Finding Blocked IPs from DB...");
+		logger.info("Fetching Blocked IPs from DB...");
 
 		List<Map<String, Object>> rows = jdbcTemplate.queryForList(dbQueryHelper.getQuery("SELECT_BLOCKED_IP"),
 				new Object[] { commandLineArgs.getStartDate(), endDate, commandLineArgs.getThreshold() });
 
 		for (Map<String, Object> row : rows) {
-			// logger.info("Result from SELECT_IP_BY_CRITERIA_SQL {} ", row);
 			BlockedIP blockedIP = new BlockedIP();
-			blockedIP.setIP(row.get("IP_ADDRESS").toString());
-			String numRequest = row.get("COUNT(IP_ADDRESS)").toString();
+			blockedIP.setIP(row.get("IP").toString());
+			String numRequest = row.get("IP_COUNT").toString();
 			blockedIP.setNumberOfRequests(Integer.valueOf(numRequest));
-			String reason = "Exceeded "+ commandLineArgs.getDuration() +" limit";
+			String reason = "Exceeded " + commandLineArgs.getDuration() + " limit";
 			blockedIP.setReason(reason);
 			blockedIPs.add(blockedIP);
 			notifyObservers("IP: " + blockedIP.getIP() + " | NumberOfRequests: " + blockedIP.getNumberOfRequests());
@@ -89,16 +88,13 @@ public class ParserRepoImpl implements ParserRepo {
 	}
 
 	@Override
-	public int saveBlockedIPs(List<BlockedIP> blockedIPs) {
-
-		int[] updateResult =  jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"),
+	public int saveBlockedIPs(List<BlockedIP> blockedIPs) throws DataAccessException {
+		int[] updateResult = jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"),
 				new BatchPreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps, int i) throws SQLException {
 						BlockedIP blockedIP = blockedIPs.get(i);
-						// ps.setObject(1, new
-						// java.sql.Timestamp(request.getDate().getTime()));
 						ps.setString(1, blockedIP.getIP());
 						ps.setLong(2, blockedIP.getNumberOfRequests());
 						ps.setString(3, blockedIP.getReason());
@@ -110,12 +106,13 @@ public class ParserRepoImpl implements ParserRepo {
 					}
 				});
 		return countAffectedRows(updateResult);
+
 	}
-	
-	private int countAffectedRows(int[] affectedRows){
+
+	private int countAffectedRows(int[] affectedRows) {
 		int affectedCount = 0;
 		for (int affectedRow : affectedRows) {
-			if (affectedRow != Statement.EXECUTE_FAILED) {
+			if (affectedRow != 0 && affectedRow != Statement.EXECUTE_FAILED) {
 				affectedCount++;
 			}
 		}

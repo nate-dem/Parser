@@ -8,11 +8,11 @@ import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 
 public interface ParserService {
-	
+
 	public int saveLogEntries(String pathToFile) throws InvalidLogFileException;
 
 	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs) throws ParserServiceException;
-	
+
 	public int saveBlockedIPs(List<BlockedIP> blockedIPs);
-	
+
 }

@@ -35,20 +35,6 @@ public class DBConfig {
 	    
 		return ds;
 	}
-	/*
-	@Bean
-	@Qualifier("h2DataSource")
-	public DataSource h2DataSource() {
-		
-		// no need shutdown, EmbeddedDatabaseFactoryBean will take care of this
-		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
-		EmbeddedDatabase db = builder
-			.setName("testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;") // DATABASE_TO_UPPER=false;
-			.setType(EmbeddedDatabaseType.H2)
-			.addScript("h2db-schema.sql")
-			.build();
-		return db;
-	}*/
 
 	@Bean
 	@Qualifier("customJdbcTemplate")

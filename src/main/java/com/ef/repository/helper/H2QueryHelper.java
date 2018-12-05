@@ -1,4 +1,4 @@
-package com.ef.repository.query;
+package com.ef.repository.helper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,19 +11,20 @@ import org.springframework.stereotype.Component;
 public class H2QueryHelper implements DbQueryHelper {
 
 	private static final Map<String, String> queries = new HashMap<>();
-	
+
 	private static final String INSERT_LOG_ENTRY = "INSERT INTO PARSER.LOG_ENTRIES "
-			+ "(START_DATE, IP_ADDRESS, REQUEST_METHOD, STATUS, USER_AGENT) "
+			+ "(REQUEST_DATE, IP_ADDRESS, REQUEST_METHOD, STATUS, USER_AGENT) "
 			+ "VALUES (?, ?, ?, ?, ?)";
-	
-	private static final String SELECT_BLOCKED_IP = "SELECT IP_ADDRESS, COUNT(IP_ADDRESS) "
+
+	private static final String SELECT_BLOCKED_IP = "SELECT IP_ADDRESS IP, COUNT(IP_ADDRESS) IP_COUNT "
 			+ "FROM PARSER.LOG_ENTRIES "
-			+ "WHERE START_DATE >= ? AND START_DATE < ? "
-			+ "GROUP BY IP_ADDRESS HAVING COUNT(IP_ADDRESS) >= ?";
-	
+			+ "WHERE REQUEST_DATE BETWEEN ? AND ? "
+			+ "GROUP BY IP_ADDRESS "
+			+ "HAVING IP_COUNT >= ?";
+
 	private static final String INSERT_BLOCKED_IP = "INSERT INTO PARSER.BLOCKED_IPS (IP_ADDRESS, NUM_REQUEST, REASON) "
 			+ "VALUES (?, ?, ?)";
-	
+
 	static {
 		queries.put("INSERT_LOG_ENTRY", INSERT_LOG_ENTRY);
 		queries.put("SELECT_BLOCKED_IP", SELECT_BLOCKED_IP);
@@ -34,5 +35,5 @@ public class H2QueryHelper implements DbQueryHelper {
 	public String getQuery(String key) {
 		return queries.get(key);
 	}
-	
+
 }

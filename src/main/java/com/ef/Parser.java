@@ -16,12 +16,12 @@ import com.ef.config.AppConfig;
 public class Parser {
 
 	public static void main(String[] args) {
-		
-	    ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
 
-	    ParseAction parseAction = ctx.getBean(ParseAction.class);
-	    parseAction.execute(args);
-		
-		((AnnotationConfigApplicationContext)ctx).close();
+		ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
+
+		ParseAction parseAction = ctx.getBean(ParseAction.class);
+		parseAction.execute(args);
+
+		((AnnotationConfigApplicationContext) ctx).close();
 	}
 }
