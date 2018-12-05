@@ -9,8 +9,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 
 import com.ef.exception.CommandLineArgsParseException;
 import com.ef.model.CommandLineArgs;
@@ -22,9 +20,6 @@ public class CommandLineArgsParser {
 	
 	private Options options;
 	private CommandLineParser parser;
-	
-	@Autowired
-	private Environment env;
 	
 	public CommandLineArgsParser(Options options, CommandLineParser parser){
 		this.options = options;
@@ -38,7 +33,6 @@ public class CommandLineArgsParser {
 		String thresholdInp = null;
 		String accesslogInp = null;
 		CommandLineArgs commandLineArgs = null;
-		boolean validCmdLineInput = false;
 		
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -53,21 +47,20 @@ public class CommandLineArgsParser {
 				startDateInp = cmd.getOptionValue("s");
 				durationInp = cmd.getOptionValue("d");
 				thresholdInp = cmd.getOptionValue("t");
-				validCmdLineInput = true;
 			}
 			
 			// mock args for testing
 			ClassLoader classLoader = getClass().getClassLoader();
 			File file = new File(classLoader.getResource("access.log").getFile());
-			/*
+			
 			accesslogInp = file.getAbsolutePath(); // "C:/ef/access.log";
 			thresholdInp = "500";
 			durationInp = "daily";
 			startDateInp = "2017-01-01.00:00:00";
 			// end of mock
-			*/
+			
 			int threshold = Integer.parseInt(thresholdInp);
-			Date startDate= DateForamtter.fromString(startDateInp, env.getProperty("parser.start.date.format"));
+			Date startDate= DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
 			
 			commandLineArgs = new CommandLineArgs(startDate, DurationType.fromValue(durationInp), threshold, accesslogInp);
 			

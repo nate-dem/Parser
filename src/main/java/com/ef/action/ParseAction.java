@@ -41,9 +41,9 @@ public class ParseAction {
 			
 			String pathToFile = commandLineArgs.getAccesslog();
 			
-			// if accesslog flag is present, save log to db
+			// if accesslog flag is present, save log entries to db
 			if(pathToFile != null) {
-				parserService.saveLog(pathToFile);
+				parserService.saveLogEntries(pathToFile);
 			}
 			
 			List<BlockedIP> blockedIPs = parserService.findBlockedIPs(commandLineArgs);

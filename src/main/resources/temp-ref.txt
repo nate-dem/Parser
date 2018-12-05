@@ -4,3 +4,6 @@ Ref:
 	 https://mdeinum.github.io/2018-07-04-PropertySource-with-yaml-files/
 	 https://dzone.com/articles/using-yaml-java-application
 	 https://www.mkyong.com/spring-mvc/spring-mvc-logback-slf4j-example/
+	 
+	 https://technotesweb.wordpress.com/2016/06/10/spring-jdbctemplate-getting-affected-row-count-on-batch-update-exception/
+	 https://howtodoinjava.com/best-practices/java-exception-handling-best-practices/

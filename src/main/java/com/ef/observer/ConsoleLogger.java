@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory;
 
 public class ConsoleLogger implements Observer<String> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ConsoleLogger.class);
+	private static final Logger logger = LoggerFactory.getLogger(ConsoleLogger.class);
 	
 	@Override
 	public void update(String msg) {
-		LOGGER.info(msg);
+		logger.info(msg);
 	}
 
 }
