@@ -4,8 +4,7 @@ public class BlockedIP {
 
 	private String IP;
 	private Integer numberOfRequests;
-	// change reason to Integer!!
-	private String reason;
+	private BlockReason reason;
 
 	public String getIP() {
 		return IP;
@@ -23,11 +22,11 @@ public class BlockedIP {
 		this.numberOfRequests = numberOfRequests;
 	}
 
-	public String getReason() {
+	public BlockReason getReason() {
 		return reason;
 	}
 
-	public void setReason(String reason) {
+	public void setReason(BlockReason reason) {
 		this.reason = reason;
 	}
 

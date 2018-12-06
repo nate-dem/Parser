@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -19,8 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.ef.exception.DBOperationException;
 import com.ef.exception.InvalidLogFileException;
 import com.ef.exception.ParserServiceException;
+import com.ef.model.BlockReason;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
@@ -108,15 +111,31 @@ public class ParserServiceImpl implements ParserService {
 	}
 
 	@Override
-	public int saveBlockedIPs(List<BlockedIP> blockedIPs) {
+	public int saveBlockedIPs(List<BlockedIP> blockedIPs, long blockReasonId) {
 		//try {
-			return parserRepo.saveBlockedIPs(blockedIPs);
+		
+		return parserRepo.saveBlockedIPs(blockedIPs, blockReasonId);
 		/*} catch( DataAccessException e) {
 			logger.error(e.getMessage());
 		}
 		return 0;*/
 	}
 
+	@Override
+	public long findOrSaveBlockReason(CommandLineArgs commandLineArgs) {
+		BlockReason blockReason;
+		
+		try {
+			blockReason = parserRepo.findBlockReason(commandLineArgs);
+			return blockReason.getId();
+		} catch (DBOperationException e) {
+			logger.error(e.getMessage());
+		}
+		
+		blockReason = new BlockReason(commandLineArgs.getStartDate(), commandLineArgs.getDuration(), commandLineArgs.getThreshold() );
+		return parserRepo.saveBlockReason(blockReason);
+	}
+	
 	private Date calculateEndDate(Date startDate, DurationType durationType) throws ParserServiceException {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(startDate);
@@ -149,6 +168,6 @@ public class ParserServiceImpl implements ParserService {
 			logger.error(e.getMessage());
 		}
 		return entry;
-	}
+	}	
 
 }

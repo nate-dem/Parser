@@ -23,7 +23,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ef.TestConfig;
-import com.ef.exception.InvalidLogFileException;
+import com.ef.model.BlockReason;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.DurationType;
@@ -52,7 +52,7 @@ public class ParserRepoTest {
 	ParserRepo parserRepo; 
 	
 	@BeforeClass
-	public static void setup() throws ParseException{
+	public static void setup() throws ParseException {
 		LogEntry entry1 = new LogEntry();
 		entry1.setDate(DateForamtter.fromString("2017-01-01 00:00:11.763", ParserConstants.LOG_DATE_FORMAT));
 		entry1.setIP("192.168.234.82");
@@ -88,7 +88,7 @@ public class ParserRepoTest {
 	}
 	
 	@Test
-	public void step1_saveLogEntries() throws InvalidLogFileException {
+	public void step1_saveLogEntries() {
 		assertEquals(3, parserRepo.saveLogEntries(entries));
 	}
 
@@ -106,8 +106,10 @@ public class ParserRepoTest {
 	}
 
 	@Test
-	public void step3_saveBlockedIPs() throws InvalidLogFileException {
-		int result = parserRepo.saveBlockedIPs(blockedIPs);
+	public void step3_saveBlockedIPs() {
+		BlockReason blockReason = new BlockReason(commandLineArgs.getStartDate(), commandLineArgs.getDuration(), commandLineArgs.getThreshold() );
+		long blockReasonId = parserRepo.saveBlockReason(blockReason);
+		int result = parserRepo.saveBlockedIPs(blockedIPs, blockReasonId);
 		assertEquals(1, result);
 	}
 }

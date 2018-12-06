@@ -7,3 +7,7 @@ Ref:
 	 
 	 https://technotesweb.wordpress.com/2016/06/10/spring-jdbctemplate-getting-affected-row-count-on-batch-update-exception/
 	 https://howtodoinjava.com/best-practices/java-exception-handling-best-practices/
+	 
+	 https://medium.com/@orafaelreis/workaround-to-unable-to-load-authentication-plugin-caching-sha2-password-message-85ddf6a98611
+	 
+	 https://stackoverflow.com/questions/2219786/best-way-to-avoid-duplicate-entry-into-mysql-database

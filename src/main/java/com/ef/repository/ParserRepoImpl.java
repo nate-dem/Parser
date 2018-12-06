@@ -1,5 +1,6 @@
 package com.ef.repository;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -15,9 +16,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
+import com.ef.exception.DBOperationException;
+import com.ef.model.BlockReason;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.model.LogEntry;
@@ -66,9 +72,8 @@ public class ParserRepoImpl implements ParserRepo {
 	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs, Date endDate) {
 
 		List<BlockedIP> blockedIPs = new LinkedList<>();
-
+		
 		logger.info("Fetching Blocked IPs from DB...");
-
 		List<Map<String, Object>> rows = jdbcTemplate.queryForList(dbQueryHelper.getQuery("SELECT_BLOCKED_IP"),
 				new Object[] { commandLineArgs.getStartDate(), endDate, commandLineArgs.getThreshold() });
 
@@ -77,8 +82,8 @@ public class ParserRepoImpl implements ParserRepo {
 			blockedIP.setIP(row.get("IP").toString());
 			String numRequest = row.get("IP_COUNT").toString();
 			blockedIP.setNumberOfRequests(Integer.valueOf(numRequest));
-			String reason = "Exceeded " + commandLineArgs.getDuration() + " limit";
-			blockedIP.setReason(reason);
+			// String reason = "Exceeded " + commandLineArgs.getDuration() + " " + commandLineArgs.getThreshold() + " threshold";
+			//blockedIP.setReason(blockReason);
 			blockedIPs.add(blockedIP);
 			notifyObservers("IP: " + blockedIP.getIP() + " | NumberOfRequests: " + blockedIP.getNumberOfRequests());
 		}
@@ -86,9 +91,42 @@ public class ParserRepoImpl implements ParserRepo {
 		return blockedIPs;
 
 	}
+	
+	@Override
+	public BlockReason findBlockReason(CommandLineArgs commandLineArgs) throws DBOperationException {
+		try {
+			return jdbcTemplate.queryForObject(
+				dbQueryHelper.getQuery("SELECT_BLOCK_REASON"), new Object[] { 
+						new java.sql.Timestamp(commandLineArgs.getStartDate().getTime()),
+						commandLineArgs.getDuration().name(),
+						commandLineArgs.getThreshold() }, 
+				new BeanPropertyRowMapper<BlockReason>(BlockReason.class));
+		} catch (DataAccessException e) {
+			throw new DBOperationException("No BlockReason found: " + e.getMessage());
+		}
+	}
+	
+	@Override
+	public long saveBlockReason(BlockReason blockReason) { 
+
+		GeneratedKeyHolder holder = new GeneratedKeyHolder();
+		jdbcTemplate.update(new PreparedStatementCreator() {
+		    @Override
+		    public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+		        PreparedStatement statement = con.prepareStatement(dbQueryHelper.getQuery("INSERT_BLOCK_REASON"), Statement.RETURN_GENERATED_KEYS);
+		        statement.setTimestamp(1, new java.sql.Timestamp(blockReason.getStartDate().getTime()));
+		        statement.setString(2, blockReason.getDuration().name());
+		        statement.setInt(3, blockReason.getThreshold());
+		        return statement;
+		    }
+		}, holder);
+		System.out.println("saveBlockReason: " + holder.getKey().longValue());
+		return holder.getKey().longValue();
+	}
 
 	@Override
-	public int saveBlockedIPs(List<BlockedIP> blockedIPs) throws DataAccessException {
+	public int saveBlockedIPs(List<BlockedIP> blockedIPs, long blockReasonId) throws DataAccessException {
+		
 		int[] updateResult = jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"),
 				new BatchPreparedStatementSetter() {
 
@@ -97,7 +135,7 @@ public class ParserRepoImpl implements ParserRepo {
 						BlockedIP blockedIP = blockedIPs.get(i);
 						ps.setString(1, blockedIP.getIP());
 						ps.setLong(2, blockedIP.getNumberOfRequests());
-						ps.setString(3, blockedIP.getReason());
+						ps.setLong(3, blockReasonId);
 					}
 
 					@Override

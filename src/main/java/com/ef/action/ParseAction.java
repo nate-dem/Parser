@@ -50,7 +50,8 @@ public class ParseAction {
 			List<BlockedIP> blockedIPs = parserService.findBlockedIPs(commandLineArgs);
 
 			if (!blockedIPs.isEmpty()) {
-				int savedBlockedIps = parserService.saveBlockedIPs(blockedIPs);
+				long blockReasonId = parserService.findOrSaveBlockReason(commandLineArgs);
+				int savedBlockedIps = parserService.saveBlockedIPs(blockedIPs, blockReasonId);
 				logger.info(messageSource.getMessage("parser.save.blocked.ip.result", new Object[] { savedBlockedIps }, Locale.US));
 			} else {
 				logger.info(messageSource.getMessage("parser.response.no.result.found", null, Locale.US));

@@ -13,6 +13,8 @@ public interface ParserService {
 
 	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs) throws ParserServiceException;
 
-	public int saveBlockedIPs(List<BlockedIP> blockedIPs);
+	public int saveBlockedIPs(List<BlockedIP> blockedIPs, long blockReasonId);
+	
+	public long findOrSaveBlockReason(CommandLineArgs commandLineArgs);
 
 }

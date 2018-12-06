@@ -48,17 +48,17 @@ public class CommandLineArgsParser {
 				durationInp = cmd.getOptionValue("d");
 				thresholdInp = cmd.getOptionValue("t");
 			}
-
+			/*
 			// mock args for testing
 			ClassLoader classLoader = getClass().getClassLoader();
 			File file = new File(classLoader.getResource("access.log").getFile());
 
 			accesslogInp = file.getAbsolutePath();
-			thresholdInp = "500";
-			durationInp = "daily";
-			startDateInp = "2017-01-01.00:00:00";
+			thresholdInp =  "200"; // "500"; //
+			durationInp =   "hourly"; // "daily";//
+			startDateInp = "2017-01-01.15:00:00"; // "2017-01-01.00:00:00"; 
 			// end of mock
-
+			*/
 			int threshold = Integer.parseInt(thresholdInp);
 			Date startDate = DateForamtter.fromString(startDateInp, ParserConstants.START_DATE_FORMAT);
 
