@@ -16,7 +16,7 @@ public interface ParserRepo extends Observable<String> {
 	
 	public List<BlockedIP> findBlockedIPs(CommandLineArgs commandLineArgs, Date endDate);
 
-	public int saveBlockedIPs(List<BlockedIP> blockedIPs, long blockReasonId);
+	public int saveBlockedIPs(List<BlockedIP> blockedIPs, BlockReason blockReason) throws DBOperationException;
 	
 	public long saveBlockReason(BlockReason blockReason);
 	

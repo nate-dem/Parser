@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 import com.ef.exception.CommandLineArgsParseException;
 import com.ef.exception.InvalidLogFileException;
 import com.ef.exception.ParserServiceException;
+import com.ef.model.BlockReason;
 import com.ef.model.BlockedIP;
 import com.ef.model.CommandLineArgs;
 import com.ef.service.ParserService;
@@ -50,8 +51,8 @@ public class ParseAction {
 			List<BlockedIP> blockedIPs = parserService.findBlockedIPs(commandLineArgs);
 
 			if (!blockedIPs.isEmpty()) {
-				long blockReasonId = parserService.findOrSaveBlockReason(commandLineArgs);
-				int savedBlockedIps = parserService.saveBlockedIPs(blockedIPs, blockReasonId);
+				BlockReason blockReason = parserService.findBlockReason(commandLineArgs);
+				int savedBlockedIps = parserService.saveBlockedIPs(blockedIPs, blockReason);
 				logger.info(messageSource.getMessage("parser.save.blocked.ip.result", new Object[] { savedBlockedIps }, Locale.US));
 			} else {
 				logger.info(messageSource.getMessage("parser.response.no.result.found", null, Locale.US));

@@ -125,25 +125,29 @@ public class ParserRepoImpl implements ParserRepo {
 	}
 
 	@Override
-	public int saveBlockedIPs(List<BlockedIP> blockedIPs, long blockReasonId) throws DataAccessException {
+	public int saveBlockedIPs(List<BlockedIP> blockedIPs, BlockReason blockReason) throws DBOperationException {
 		
-		int[] updateResult = jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"),
-				new BatchPreparedStatementSetter() {
-
-					@Override
-					public void setValues(PreparedStatement ps, int i) throws SQLException {
-						BlockedIP blockedIP = blockedIPs.get(i);
-						ps.setString(1, blockedIP.getIP());
-						ps.setLong(2, blockedIP.getNumberOfRequests());
-						ps.setLong(3, blockReasonId);
-					}
-
-					@Override
-					public int getBatchSize() {
-						return blockedIPs.size();
-					}
-				});
-		return countAffectedRows(updateResult);
+		try {
+			int[] updateResult = jdbcTemplate.batchUpdate(dbQueryHelper.getQuery("INSERT_BLOCKED_IP"),
+					new BatchPreparedStatementSetter() {
+	
+						@Override
+						public void setValues(PreparedStatement ps, int i) throws SQLException {
+							BlockedIP blockedIP = blockedIPs.get(i);
+							ps.setString(1, blockedIP.getIP());
+							ps.setLong(2, blockedIP.getNumberOfRequests());
+							ps.setLong(3, blockReason.getId());
+						}
+	
+						@Override
+						public int getBatchSize() {
+							return blockedIPs.size();
+						}
+					});
+			return countAffectedRows(updateResult);
+		} catch (DataAccessException e){
+			throw new DBOperationException(e.getMessage());
+		}
 
 	}
 
