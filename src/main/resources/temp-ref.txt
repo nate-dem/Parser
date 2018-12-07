@@ -11,3 +11,5 @@ Ref:
 	 https://medium.com/@orafaelreis/workaround-to-unable-to-load-authentication-plugin-caching-sha2-password-message-85ddf6a98611
 	 
 	 https://stackoverflow.com/questions/2219786/best-way-to-avoid-duplicate-entry-into-mysql-database
+
+         https://rules.sonarsource.com/java/tag/multi-threading/RSPEC-2885
